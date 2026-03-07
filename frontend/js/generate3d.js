@@ -29,16 +29,44 @@ function initScene(container) {
   renderer.setSize(container.clientWidth, container.clientHeight);
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.2;
+  renderer.outputEncoding = THREE.sRGBEncoding;
   container.appendChild(renderer.domElement);
 
   // Lighting
-  const ambient = new THREE.AmbientLight(0xffeedd, 0.6);
+  const hemisphere = new THREE.HemisphereLight(0xfff5e6, 0x8090a0, 0.4);
+  scene.add(hemisphere);
+
+  const ambient = new THREE.AmbientLight(0xffeedd, 0.3);
   scene.add(ambient);
 
-  const directional = new THREE.DirectionalLight(0xffffff, 0.8);
-  directional.position.set(2, 4, 3);
+  // Key light (main directional)
+  const directional = new THREE.DirectionalLight(0xfff8f0, 1.0);
+  directional.position.set(3, 6, 2);
   directional.castShadow = true;
+  directional.shadow.mapSize.width = 2048;
+  directional.shadow.mapSize.height = 2048;
+  directional.shadow.camera.near = 0.5;
+  directional.shadow.camera.far = 20;
+  directional.shadow.camera.left = -6;
+  directional.shadow.camera.right = 6;
+  directional.shadow.camera.top = 6;
+  directional.shadow.camera.bottom = -6;
+  directional.shadow.bias = -0.0005;
+  directional.shadow.normalBias = 0.02;
   scene.add(directional);
+
+  // Fill light (softer, opposite side)
+  const fillLight = new THREE.DirectionalLight(0xc8d8ff, 0.4);
+  fillLight.position.set(-3, 4, -2);
+  scene.add(fillLight);
+
+  // Rim/back light for depth
+  const rimLight = new THREE.DirectionalLight(0xfff0dd, 0.3);
+  rimLight.position.set(0, 3, -4);
+  scene.add(rimLight);
 
   // Controls
   orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
