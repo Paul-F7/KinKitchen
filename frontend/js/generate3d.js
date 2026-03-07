@@ -9,6 +9,9 @@ let scene, camera, renderer, orbitControls, transformControls;
 let ingredientMeshes = [];
 let selectedObject = null;
 let positionPanel = null;
+let animationFrameId = null;
+let isXRActive = false;
+let xrSession = null;
 
 function initScene(container) {
   scene = new THREE.Scene();
@@ -19,7 +22,11 @@ function initScene(container) {
   // Fixed counter-level camera
   camera.position.set(0.1257, 4.2654, -3.5369);
 
-  renderer = new THREE.WebGLRenderer({ antialias: true });
+  // XR-compatible context so we can launch into WebXR
+  const canvas = document.createElement('canvas');
+  const gl = canvas.getContext('webgl', { antialias: true, xrCompatible: true });
+  if (!gl) throw new Error('WebGL not available');
+  renderer = new THREE.WebGLRenderer({ canvas, context: gl, antialias: true });
   renderer.setSize(container.clientWidth, container.clientHeight);
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.shadowMap.enabled = true;
@@ -27,6 +34,7 @@ function initScene(container) {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.2;
   renderer.outputEncoding = THREE.sRGBEncoding;
+  if (renderer.xr) renderer.xr.enabled = true;
   container.appendChild(renderer.domElement);
 
   // Lighting
@@ -71,12 +79,11 @@ function initScene(container) {
   transformControls.addEventListener('dragging-changed', (event) => {
     orbitControls.enabled = !event.value;
   });
-  // Force uniform scaling — preserve aspect ratio
+  // Force uniform scaling — drag X axis, Y and Z follow
   transformControls.addEventListener('objectChange', () => {
     if (transformControls.mode === 'scale' && transformControls.object) {
       var s = transformControls.object.scale;
-      var max = Math.max(s.x, s.y, s.z);
-      s.set(max, max, max);
+      s.set(s.x, s.x, s.x);
     }
   });
   scene.add(transformControls);
@@ -124,9 +131,10 @@ function initScene(container) {
     renderer.setSize(container.clientWidth, container.clientHeight);
   });
 
-  // Render loop
+  // Render loop (paused when WebXR is active)
   function animate() {
-    requestAnimationFrame(animate);
+    animationFrameId = requestAnimationFrame(animate);
+    if (isXRActive) return;
     orbitControls.update();
     updatePositionPanel();
     renderer.render(scene, camera);
@@ -158,6 +166,81 @@ function selectObject(obj) {
 function deselectObject() {
   selectedObject = null;
   transformControls.detach();
+}
+
+function onXRSessionEnded() {
+  isXRActive = false;
+  xrSession = null;
+  if (renderer && renderer.setAnimationLoop) renderer.setAnimationLoop(null);
+}
+
+/** iPhone / no-WebXR: fullscreen Three.js view, drag to look around. */
+function launchFullscreenView() {
+  var container = document.getElementById('kitchen3d-container');
+  if (!container || !renderer) return;
+  var overlay = document.getElementById('kitchen3d-overlay');
+  var backBtn = document.getElementById('btn-kitchen3d-back');
+  var doneBtn = document.createElement('button');
+  doneBtn.textContent = 'Done';
+  doneBtn.style.cssText = 'position:fixed;top:16px;right:16px;z-index:99999;padding:12px 20px;font-size:16px;background:rgba(0,0,0,0.6);color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:8px;cursor:pointer;';
+
+  function exitFullscreen() {
+    if (document.exitFullscreen) document.exitFullscreen();
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+    if (doneBtn.parentNode) doneBtn.remove();
+    if (overlay) overlay.style.display = '';
+    if (backBtn) backBtn.style.display = '';
+    orbitControls.enabled = false;
+  }
+
+  doneBtn.addEventListener('click', exitFullscreen);
+  if (overlay) overlay.style.display = 'none';
+  if (backBtn) backBtn.style.display = 'none';
+  document.body.appendChild(doneBtn);
+  orbitControls.enabled = true;
+
+  if (container.requestFullscreen) {
+    container.requestFullscreen().catch(function() {});
+  } else if (container.webkitRequestFullscreen) {
+    container.webkitRequestFullscreen();
+  }
+
+  function onFullscreenChange() {
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      document.removeEventListener('fullscreenchange', onFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', onFullscreenChange);
+      exitFullscreen();
+    }
+  }
+  document.addEventListener('fullscreenchange', onFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+}
+
+async function launchWebXR() {
+  if (renderer && navigator.xr) {
+    var vrSupported = false;
+    var arSupported = false;
+    try {
+      vrSupported = await navigator.xr.isSessionSupported('immersive-vr');
+      arSupported = await navigator.xr.isSessionSupported('immersive-ar');
+    } catch (_) {}
+    var mode = vrSupported ? 'immersive-vr' : (arSupported ? 'immersive-ar' : null);
+    if (mode && renderer.xr) {
+      try {
+        xrSession = await navigator.xr.requestSession(mode, { optionalFeatures: ['local-floor'] });
+        xrSession.addEventListener('end', onXRSessionEnded);
+        await renderer.xr.setSession(xrSession);
+        isXRActive = true;
+        renderer.setAnimationLoop(function xrLoop() {
+          renderer.render(scene, camera);
+        });
+        return;
+      } catch (err) {
+        console.warn('WebXR session failed:', err);
+      }
+    }
+  }
+  launchFullscreenView();
 }
 
 function loadKitchen() {
@@ -197,13 +280,14 @@ function loadKitchen() {
 function loadIngredient(name, position) {
   return new Promise((resolve) => {
     const normalizedName = name.toLowerCase().trim();
+    const configKey = normalizedName.replace(/-/g, '_');
     loader.load(
       `${ASSETS_PATH}/${normalizedName}.glb`,
       (gltf) => {
         const model = gltf.scene;
         model.position.copy(position);
-        model.scale.setScalar(INGREDIENT_SCALES[normalizedName] || DEFAULT_SCALE);
-        var rot = INGREDIENT_ROTATIONS[normalizedName] || DEFAULT_ROTATION;
+        model.scale.setScalar(INGREDIENT_SCALES[configKey] || DEFAULT_SCALE);
+        var rot = INGREDIENT_ROTATIONS[configKey] || DEFAULT_ROTATION;
         model.rotation.set(rot.x, rot.y, rot.z);
         model.traverse((child) => {
           if (child.isMesh) {
@@ -293,7 +377,7 @@ async function handleGenerate3d(imageUrl, boundingBoxes, container) {
 
     await Promise.all(
       ingredients.map((ing) => {
-        const name = ing.name.toLowerCase().trim();
+        const name = ing.name.toLowerCase().trim().replace(/-/g, '_');
         typeCounts[name] = (typeCounts[name] || 0) + 1;
         const slotName = name + '_' + typeCounts[name];
         const slot = INGREDIENT_POSITIONS[slotName];
@@ -331,6 +415,14 @@ async function handleGenerate3d(imageUrl, boundingBoxes, container) {
       // Button row
       const btnRow = document.createElement('div');
       btnRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;';
+
+      // Launch in WebXR (or fullscreen on iPhone)
+      const xrBtn = document.createElement('button');
+      xrBtn.textContent = 'Launch in WebXR / Fullscreen';
+      xrBtn.className = 'kitchen3d-btn';
+      xrBtn.style.background = 'rgba(200,160,80,0.35)';
+      xrBtn.addEventListener('click', () => launchWebXR());
+      btnRow.appendChild(xrBtn);
 
       // Unlock Camera
       const camBtn = document.createElement('button');
