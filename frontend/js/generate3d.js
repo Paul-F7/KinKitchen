@@ -172,6 +172,7 @@ function onXRSessionEnded() {
   isXRActive = false;
   xrSession = null;
   if (renderer && renderer.setAnimationLoop) renderer.setAnimationLoop(null);
+  if (window.CookingGuide) CookingGuide.setXRActive(false);
 }
 
 /** iPhone / no-WebXR: fullscreen Three.js view, drag to look around. */
@@ -231,6 +232,7 @@ async function launchWebXR() {
         xrSession.addEventListener('end', onXRSessionEnded);
         await renderer.xr.setSession(xrSession);
         isXRActive = true;
+        if (window.CookingGuide) CookingGuide.setXRActive(true);
         renderer.setAnimationLoop(function xrLoop() {
           renderer.render(scene, camera);
         });
@@ -395,6 +397,16 @@ async function handleGenerate3d(imageUrl, boundingBoxes, container) {
         });
       })
     );
+
+    // Reset camera to the original counter-level view before launching guide
+    camera.position.set(0.1257, 4.2654, -3.5369);
+    orbitControls.target.set(0.1169, 3.2055, 0.7738);
+    orbitControls.update();
+
+    // Launch CookingGuide overlay now that all meshes are in the scene
+    if (window.CookingGuide) {
+      CookingGuide.init(scene, camera, renderer, ingredientMeshes);
+    }
 
     // Update overlay with controls
     if (overlay) {
