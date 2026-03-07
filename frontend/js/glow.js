@@ -16,7 +16,7 @@
  */
 
 (function () {
-  const SPREAD       = 28;   // degrees of visible arc
+  const SPREAD       = 40;   // degrees of visible arc
   const INACTIVE_R   = 0.7;  // fraction of card radius that stays inactive
   const PROXIMITY    = 0;    // extra pixels beyond card edge
   const LERP_SPEED   = 0.09; // 0–1: how quickly angle follows mouse (lower = smoother)
