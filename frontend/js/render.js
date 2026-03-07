@@ -236,5 +236,14 @@ function mountAR(data) {
     detection  = { name: obj, x: 0.1, y: 0.1, w: 0.8, h: 0.8, confidence: 1 };
   }
 
-  CookingAR.mount(wrapper, img, detection);
+  // Pass Gemini Indigenous context so the storyboard overlay has real data
+  const contextData = data.analysis
+    ? {
+        indigenousContext: data.analysis.indigenousContext || null,
+        recipes:           data.analysis.recipes           || [],
+        nutritionNotes:    data.analysis.nutritionNotes    || null,
+      }
+    : null;
+
+  CookingAR.mount(wrapper, img, detection, contextData);
 }
