@@ -189,10 +189,15 @@ body {
 /* ── SCREEN 2: NATION ─────────────────────────────── */
 .screen-nation {
   background: var(--cream);
-  padding: 60px 32px;
+  padding: 40px 32px 80px;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
-.screen-header { margin-bottom: 48px; }
+.screen-header { margin-bottom: 28px; flex-shrink: 0; }
 
 .step-label {
   font-size: 10px;
@@ -281,18 +286,33 @@ body {
 /* ── SCREEN 3: UPLOAD ─────────────────────────────── */
 .screen-upload {
   background: var(--warm-white);
-  padding: 60px 32px;
+  padding: 40px 32px 80px;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.screen-upload .screen-header {
+  margin-bottom: 24px;
+  flex-shrink: 0;
 }
 
 .upload-zone {
   border: 2px dashed var(--cream-dark);
   border-radius: 4px;
-  padding: 56px 32px;
+  padding: 0 32px;
   text-align: center;
   cursor: pointer;
   background: var(--cream);
   transition: all 0.2s;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .upload-zone:hover, .upload-zone.dragover {
