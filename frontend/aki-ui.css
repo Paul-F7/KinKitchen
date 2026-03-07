@@ -1203,27 +1203,19 @@ body {
   isolation: isolate;
 }
 
-/* Outer blur glow — visible on hover/selected, adds depth */
-.glowing-card::before {
-  content: '';
-  position: absolute;
-  inset: -3px;
-  border-radius: inherit;
-  background:
-    radial-gradient(circle,            #C8813A 10%, #C8813A00 20%),
-    radial-gradient(circle at 40% 40%, #E8A55A  5%, #E8A55A00 15%),
-    radial-gradient(circle at 60% 60%, #2D4A35 10%, #2D4A3500 20%),
-    repeating-conic-gradient(
-      from calc((var(--glow-start, 0) - 40) * 1deg) at 50% 50%,
-      #C8813A 0%, #E8A55A calc(25%/5), #2D4A35 calc(50%/5),
-      #3D6148 calc(75%/5), #C8813A calc(100%/5)
-    );
-  background-attachment: fixed;
-  filter: blur(8px);
-  opacity: calc(var(--glow-active, 0) * 0.55);
-  transition: opacity 300ms ease;
-  pointer-events: none;
-  z-index: -1;
+/* Outer glow on hover — box-shadow stays outside the card, no bleed */
+.nation-card:hover {
+  box-shadow:
+    0 0 12px rgba(200,129,58,0.35),
+    0 0 28px rgba(200,129,58,0.15),
+    0 0 6px  rgba(45,74,53,0.2);
+}
+
+.nation-card.selected {
+  box-shadow:
+    0 0 16px rgba(200,129,58,0.5),
+    0 0 36px rgba(200,129,58,0.25),
+    0 0 8px  rgba(45,74,53,0.3);
 }
 
 /*
@@ -1302,8 +1294,7 @@ body {
 }
 
 /* Selected nation card — full rotating glow border, always on */
-.nation-card.selected::after,
-.nation-card.selected::before {
+.nation-card.selected::after {
   opacity: 1 !important;
   animation: glow-spin 3s linear infinite;
 }
