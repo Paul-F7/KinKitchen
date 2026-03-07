@@ -16,6 +16,12 @@
     .analysis h2 { margin: 0 0 0.5rem; font-size: 1rem; }
     .analysis ul { margin: 0.25rem 0; padding-left: 1.25rem; }
     .analysis p { margin: 0.5rem 0; }
+    .img-wrap { position: relative; display: inline-block; max-width: 100%; margin-top: 0.5rem; }
+    .img-wrap img { display: block; max-width: 100%; height: auto; vertical-align: top; }
+    .bbox { position: absolute; border: 2px solid #0a7; background: rgba(10,119,119,0.15); pointer-events: none; }
+    .bbox span { position: absolute; left: 0; top: -1.25em; font-size: 11px; background: #0a7; color: #fff; padding: 1px 4px; white-space: nowrap; max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+    .food-list { list-style: none; padding-left: 0; margin: 0.25rem 0 0; }
+    .food-list li { margin: 0.2rem 0; }
   </style>
 </head>
 <body>
@@ -57,20 +63,70 @@
         if (data.contentAnalysis) {
           const c = data.contentAnalysis;
           html += '<div class="analysis" style="margin-top:0.75rem;">';
-          html += '<h2>Content analysis (LVIS ingredients &amp; scene)</h2>';
+          html += '<h2>Food detection (high confidence only)</h2>';
           if (c.error) {
             html += '<p class="error">' + escapeHtml(c.error) + '</p>';
           } else {
-            if (c.foodDetected?.length) html += '<p><strong>Detected ingredients &amp; items:</strong> ' + escapeHtml(c.foodDetected.join(', ')) + '</p>';
+            const foods = c.foodDetected || [];
+            if (foods.length) {
+              html += '<p><strong>Detected food:</strong></p><ul class="food-list">';
+              foods.forEach(function(f) {
+                const name = typeof f === 'object' ? f.label : f;
+                const pct = typeof f === 'object' && f.confidence != null ? (Math.round(f.confidence * 100) + '%') : '';
+                html += '<li>' + escapeHtml(name) + (pct ? ' <strong>' + escapeHtml(pct) + '</strong>' : '') + '</li>';
+              });
+              html += '</ul>';
+            }
             if (c.caption) html += '<p><strong>Description:</strong> ' + escapeHtml(c.caption) + '</p>';
-            if (!c.foodDetected?.length && !c.caption) html += '<p>No ingredients or caption returned.</p>';
+            if (data.mediaType === 'image' && data.url) {
+              html += '<div class="img-wrap" data-food="' + escapeHtml(JSON.stringify(foods)) + '">';
+              html += '<img src="' + escapeHtml(data.url) + '" alt="Uploaded" crossorigin="anonymous">';
+              html += '</div>';
+            }
+            if (!foods.length && !c.caption) html += '<p>No food or caption returned.</p>';
           }
           html += '</div>';
         }
+        drawBoundingBoxes();
         if (data.analysisError) {
           html += '<p class="error" style="margin-top:0.5rem;">Analysis: ' + escapeHtml(data.analysisError) + '</p>';
         }
         resultEl.innerHTML = html;
+
+        function drawBoundingBoxes() {
+          document.querySelectorAll('.img-wrap[data-food]').forEach(function(wrap) {
+            var foodJson = wrap.getAttribute('data-food');
+            if (!foodJson) return;
+            var foods = [];
+            try { foods = JSON.parse(foodJson); } catch (e) { return; }
+            var img = wrap.querySelector('img');
+            if (!img || !img.complete) {
+              img && img.addEventListener('load', function() { drawBoxes(wrap, img, foods); });
+              return;
+            }
+            drawBoxes(wrap, img, foods);
+          });
+        }
+        function drawBoxes(wrap, img, foods) {
+          var nw = img.naturalWidth, nh = img.naturalHeight;
+          var dw = img.offsetWidth, dh = img.offsetHeight;
+          if (!nw || !nh) return;
+          var scaleX = dw / nw, scaleY = dh / nh;
+          foods.forEach(function(f) {
+            var b = f && f.boundingBox;
+            if (!Array.isArray(b) || b.length < 4) return;
+            var x = b[0] * scaleX, y = b[1] * scaleY, w = b[2] * scaleX, h = b[3] * scaleY;
+            var box = document.createElement('div');
+            box.className = 'bbox';
+            box.style.left = x + 'px';
+            box.style.top = y + 'px';
+            box.style.width = w + 'px';
+            box.style.height = h + 'px';
+            var label = (f.label || '') + ' ' + (f.confidence != null ? (Math.round(f.confidence * 100) + '%') : '');
+            box.innerHTML = '<span>' + escapeHtml(label.trim()) + '</span>';
+            wrap.appendChild(box);
+          });
+        }
       } catch (err) {
         resultEl.className = 'error';
         resultEl.textContent = err.message;

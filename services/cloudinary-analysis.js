@@ -1,6 +1,6 @@
 /**
  * Cloudinary Analyze API – Content Analysis add-on.
- * Uses captioning for a text description and LVIS for object/ingredient detection (1000+ classes).
+ * Uses captioning + LVIS; returns only food items above confidence threshold with bounding boxes.
  * Requires CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET.
  */
 
@@ -9,6 +9,33 @@ const https = require('https');
 const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
 const apiKey = process.env.CLOUDINARY_API_KEY;
 const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+const MIN_CONFIDENCE = 0.6;
+
+/** LVIS labels we treat as food/ingredients only (excludes tableware, furniture, etc.) */
+const FOOD_LABELS = new Set([
+  'apple', 'apricot', 'artichoke', 'asparagus', 'avocado', 'bacon', 'bagel', 'baking-powder', 'banana',
+  'basil', 'bean', 'beef', 'beet', 'biscuit', 'blackberry', 'blueberry', 'bread', 'broccoli', 'burrito',
+  'butter', 'cabbage', 'cake', 'candy', 'cantaloupe', 'carrot', 'cauliflower', 'celery', 'cheese',
+  'cherry', 'chicken', 'chili', 'chive', 'chocolate', 'cilantro', 'cinnamon', 'coconut', 'condiment',
+  'cookie', 'courgette', 'crab', 'crape', 'cream', 'cucumber', 'curry', 'custard', 'dill', 'donut',
+  'dough', 'dressing', 'egg', 'eggplant', 'fish', 'flour', 'garlic', 'ginger', 'grape', 'grapefruit',
+  'grits', 'guacamole', 'ham', 'honey', 'hot-dog', 'ice-cream', 'jam', 'jelly', 'kale', 'ketchup',
+  'kiwi', 'lamb', 'leek', 'lemon', 'lettuce', 'lime', 'lobster', 'mango', 'maple-syrup', 'marshmallow',
+  'mayonnaise', 'meat', 'melon', 'milk', 'mint', 'mushroom', 'mustard', 'noodle', 'nut', 'oatmeal',
+  'oil', 'olive', 'onion', 'orange', 'oregano', 'pancake', 'pasta', 'pastry', 'pea', 'peach', 'pear',
+  'pepper', 'pickle', 'pie', 'pimento', 'pineapple', 'pita', 'pizza', 'plum', 'pomegranate', 'pork',
+  'potato', 'poultry', 'pudding', 'pumpkin', 'quesadilla', 'radish', 'raisin', 'raspberry', 'relish',
+  'rice', 'rosemary', 'rum', 'salad', 'salmon', 'salsa', 'salt', 'sandwich', 'sauce', 'sausage',
+  'scallop', 'seafood', 'sesame', 'shallot', 'soup', 'sour-cream', 'soy-sauce', 'spinach', 'squash',
+  'steak', 'strawberry', 'sugar', 'sushi', 'sweet-potato', 'taco', 'tarragon', 'tea', 'thyme', 'toast',
+  'tofu', 'tomato', 'tortilla', 'tuna', 'turkey', 'turnip', 'vanilla', 'vinegar', 'waffle', 'walnut',
+  'watermelon', 'wine', 'yogurt', 'zucchini',
+]);
+
+function normalizeLabel(label) {
+  return String(label).toLowerCase().replace(/\s+/g, '-').replace(/_/g, '-');
+}
 
 function analyzeRequest(model, body) {
   return new Promise((resolve, reject) => {
@@ -47,48 +74,50 @@ function analyzeRequest(model, body) {
 }
 
 /**
- * Extract all detected label names from LVIS-style response (tags object or tags array).
- * LVIS has 1000+ classes (ingredients, objects, etc.).
+ * Extract food-only detections with confidence >= MIN_CONFIDENCE and bounding boxes.
+ * Returns [{ label, confidence, boundingBox: [x, y, w, h] }, ...].
  */
-function extractLvisLabels(lvisData) {
-  const labels = [];
+function extractFoodDetections(lvisData) {
+  const out = [];
   const analysis = lvisData?.data?.analysis;
-  if (!analysis) return labels;
+  const tags = analysis?.tags ?? analysis?.data?.tags;
+  if (!tags || typeof tags !== 'object') return out;
 
-  const tags = analysis.tags;
-  if (tags && typeof tags === 'object' && !Array.isArray(tags)) {
-    for (const [label, items] of Object.entries(tags)) {
-      if (Array.isArray(items) && items.length > 0) labels.push(label);
-      else if (items && typeof items === 'object' && (items.confidence != null || items.length > 0)) labels.push(label);
+  for (const [label, items] of Object.entries(tags)) {
+    const norm = normalizeLabel(label);
+    if (!FOOD_LABELS.has(norm)) continue;
+    const list = Array.isArray(items) ? items : (items && items.detections) ? items.detections : [];
+    for (const item of list) {
+      const conf = item?.confidence ?? item?.score;
+      if (conf == null || conf < MIN_CONFIDENCE) continue;
+      const bbox = item?.['bounding-box'] ?? item?.bounding_box ?? item?.boundingBox;
+      const arr = Array.isArray(bbox) && bbox.length >= 4 ? bbox : null;
+      out.push({
+        label: label.replace(/-/g, ' '),
+        confidence: Math.round(conf * 100) / 100,
+        boundingBox: arr,
+      });
     }
   }
-  if (Array.isArray(tags)) {
-    for (const t of tags) {
-      const name = t?.name ?? t?.label ?? t?.category ?? (typeof t === 'string' ? t : null);
-      if (name) labels.push(name);
-    }
-  }
-  return [...new Set(labels)];
+  return out.sort((a, b) => b.confidence - a.confidence);
 }
 
 /**
- * Run content analysis on an image URL (e.g. Cloudinary secure_url).
- * Uses LVIS for 100s of ingredients/objects; returns { caption, foodDetected }.
+ * Run content analysis on an image URL.
+ * Returns { caption, foodDetected: [{ label, confidence, boundingBox }], error }.
  */
 async function analyzeImageContent(imageUrl) {
   if (!cloudName || !apiKey || !apiSecret) {
-    return { caption: null, foodDetected: null, error: 'Cloudinary credentials not configured' };
+    return { caption: null, foodDetected: [], error: 'Cloudinary credentials not configured' };
   }
 
   const source = { uri: imageUrl };
-  const result = { caption: null, foodDetected: null, error: null };
+  const result = { caption: null, foodDetected: [], error: null };
 
   try {
     const captionRes = await analyzeRequest('captioning', { source });
     const capData = captionRes?.data?.analysis?.data;
-    if (capData?.caption) {
-      result.caption = capData.caption;
-    }
+    if (capData?.caption) result.caption = capData.caption;
   } catch (err) {
     result.error = err.message || 'Captioning failed';
     return result;
@@ -96,27 +125,22 @@ async function analyzeImageContent(imageUrl) {
 
   try {
     const lvisRes = await analyzeRequest('lvis', { source });
-    result.foodDetected = extractLvisLabels(lvisRes);
+    result.foodDetected = extractFoodDetections(lvisRes);
   } catch {
-    // lvis is optional; don't overwrite result.error
+    // lvis optional
   }
 
   return result;
 }
 
-/**
- * Returns a single text string describing what food/content is seen (for UI).
- */
 function getContentAnalysisText(analysis) {
   if (!analysis) return null;
   if (analysis.error) return `Content analysis: ${analysis.error}`;
   const parts = [];
   if (analysis.foodDetected?.length) {
-    parts.push(`Detected (ingredients & items): ${analysis.foodDetected.join(', ')}.`);
+    parts.push(`Food detected: ${analysis.foodDetected.map((f) => `${f.label} (${(f.confidence * 100).toFixed(0)}%)`).join(', ')}.`);
   }
-  if (analysis.caption) {
-    parts.push(analysis.caption);
-  }
+  if (analysis.caption) parts.push(analysis.caption);
   return parts.length ? parts.join(' ') : null;
 }
 

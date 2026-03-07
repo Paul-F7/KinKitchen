@@ -41,7 +41,7 @@ app.post('/api/upload', multerUpload.single('file'), async (req, res) => {
       }
     }
 
-    res.json({ url, publicId, analysis, analysisError, contentAnalysis });
+    res.json({ url, publicId, mediaType, analysis, analysisError, contentAnalysis });
   } catch (err) {
     res.status(500).json({ error: err.message || 'Upload failed' });
   }
