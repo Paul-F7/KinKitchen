@@ -110,46 +110,60 @@
 
   <!-- ── SCREEN 2: UPLOAD ── -->
   <div class="screen screen-upload" data-screen="upload">
-    <div class="screen-header">
-      <button class="btn-back" id="btn-upload-back">← Back</button>
-      <div class=\"step-label\">Step 1 of 1</div>
-      <h2 class="screen-title">What's in your kitchen?</h2>
-      <p class="screen-desc">Take a photo or upload an image of your ingredients and we'll find recipes for you.</p>
-    </div>
+    <button class="btn-back" id="btn-upload-back" style="align-self:flex-start;margin-bottom:12px;">← Back</button>
 
-    <div class="upload-zone" id="upload-zone">
-      <svg class="upload-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="6" y="10" width="36" height="28" rx="3" stroke="#C8813A" stroke-width="2"/>
-        <circle cx="24" cy="24" r="7" stroke="#C8813A" stroke-width="2"/>
-        <path d="M18 10l2-4h8l2 4" stroke="#C8813A" stroke-width="2"/>
-      </svg>
-      <p class="upload-label">Photograph your ingredients</p>
-      <p class="upload-sub">Place ingredients on a flat surface<br>for best recognition</p>
-    </div>
+    <div class="uc-back">
+      <div class="uc-border">
+        <div class="uc-inner">
+          <div class="uc-badge">Scan Your Kitchen</div>
+          <h2 class="uc-title">What's in your kitchen?</h2>
+          <p class="uc-desc">Photograph your ingredients — we'll find traditional recipes from the land</p>
 
-    <!-- Upload progress (hidden until upload starts) -->
-    <div class="aki-progress" id="upload-progress" style="display:none">
-      <div class="aki-progress__steps">
-        <div class="aki-progress__step aki-progress__step--active" id="pstep-1">
-          <div class="aki-progress__dot"><div class="spinner"></div></div>
-          <span>Uploading…</span>
-        </div>
-        <div class="aki-progress__step" id="pstep-2">
-          <div class="aki-progress__dot"><div class="spinner spinner--faint"></div></div>
-          <span>Analysing…</span>
-        </div>
-        <div class="aki-progress__step" id="pstep-3">
-          <div class="aki-progress__dot"><div class="spinner spinner--faint"></div></div>
-          <span>Finding recipes…</span>
+          <div class="upload-zone" id="upload-zone">
+            <svg class="upload-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="10" width="36" height="28" rx="3" stroke="#C8813A" stroke-width="2"/>
+              <circle cx="24" cy="24" r="7" stroke="#C8813A" stroke-width="2"/>
+              <path d="M18 10l2-4h8l2 4" stroke="#C8813A" stroke-width="2"/>
+            </svg>
+            <p class="upload-label">Drop a photo here</p>
+            <p class="upload-sub">PNG · JPG · WEBP · MP4 — up to 100 MB</p>
+            <div class="upload-type-btns">
+              <button type="button" class="upload-type-btn" id="btn-type-image">📷 Image</button>
+              <button type="button" class="upload-type-btn" id="btn-type-video">🎬 Video</button>
+              <button type="button" class="upload-type-btn" id="btn-type-camera">📸 Camera</button>
+            </div>
+          </div>
+
+          <button class="uc-gallery-btn" id="btn-camera-roll">🖼 Choose from gallery</button>
+
+          <!-- Upload progress (hidden until upload starts) -->
+          <div class="aki-progress" id="upload-progress" style="display:none">
+            <div class="aki-progress__steps">
+              <div class="aki-progress__step aki-progress__step--active" id="pstep-1">
+                <div class="aki-progress__dot"><div class="spinner"></div></div>
+                <span>Uploading…</span>
+              </div>
+              <div class="aki-progress__step" id="pstep-2">
+                <div class="aki-progress__dot"><div class="spinner spinner--faint"></div></div>
+                <span>Analysing…</span>
+              </div>
+              <div class="aki-progress__step" id="pstep-3">
+                <div class="aki-progress__dot"><div class="spinner spinner--faint"></div></div>
+                <span>Finding recipes…</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="upload-error" class="aki-error" style="display:none" role="alert"></div>
+          <button class="btn-secondary" id="btn-upload-retry" style="display:none;width:100%;margin-top:12px;justify-content:center;">Try again</button>
+
+          <div class="uc-tips">
+            <span>🌱 Lay ingredients flat for best detection</span>
+            <span>🌿 Works with vegetables, grains &amp; canned goods</span>
+          </div>
         </div>
       </div>
     </div>
-
-    <div class="or-divider">or</div>
-    <button class="btn-secondary" id="btn-camera-roll">Upload from camera roll</button>
-
-    <div id="upload-error" class="aki-error" style="display:none" role="alert"></div>
-    <button class="btn-secondary" id="btn-upload-retry" style="display:none;width:100%;margin-top:12px;justify-content:center;">Try again</button>
   </div>
 
   <!-- ── SCREEN 4: DETECTION RESULT ── -->
