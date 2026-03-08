@@ -647,7 +647,116 @@ body {
 
 /* ── SCREEN 4: DETECTION ───────────────────────────── */
 .screen-detect {
-  background: var(--charcoal-soft);
+  background: #0a0a0a;
+  background-image: radial-gradient(circle, rgba(200,129,58,0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 90px 20px 80px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+/* ── iPad scroll container ── */
+.ipad-scroll-container {
+  width: 100%;
+  max-width: 700px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.ipad-header-text {
+  text-align: center;
+  margin-bottom: 32px;
+  animation: ipadFadeUp 0.6s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+@keyframes ipadFadeUp {
+  from { opacity: 0; transform: translateY(30px) rotateX(10deg); }
+  to   { opacity: 1; transform: translateY(0) rotateX(0deg); }
+}
+
+.ipad-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(200,129,58,0.7);
+  margin: 0 0 8px;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.ipad-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: #F5E8CC;
+  margin: 0 0 6px;
+  line-height: 1.15;
+}
+
+.ipad-subtitle {
+  font-size: 14px;
+  color: rgba(245,232,204,0.45);
+  margin: 0;
+  font-style: italic;
+}
+
+/* ── iPad frame ── */
+.ipad-frame {
+  perspective: 1200px;
+  width: 100%;
+  animation: ipadTiltIn 0.8s cubic-bezier(0.16,1,0.3,1) 0.1s both;
+}
+
+@keyframes ipadTiltIn {
+  from { opacity: 0; transform: rotateX(20deg) scale(0.95) translateY(40px); }
+  to   { opacity: 1; transform: rotateX(0deg) scale(1) translateY(0); }
+}
+
+.ipad-device {
+  background: #1c1c1e;
+  border-radius: 30px;
+  border: 6px solid #2a2a2c;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.08),
+    0 30px 80px rgba(0,0,0,0.7),
+    0 0 40px rgba(200,129,58,0.12);
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.ipad-camera {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px; height: 8px;
+  background: #0a0a0a;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.1);
+  z-index: 10;
+}
+
+.ipad-screen {
+  margin: 32px 0 0;
+  background: #111;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ipad-home-bar {
+  width: 120px;
+  height: 4px;
+  background: rgba(255,255,255,0.25);
+  border-radius: 2px;
+  margin: 12px auto;
 }
 
 .detect-image-area {
@@ -1416,45 +1525,84 @@ body {
   letter-spacing: 0.5px;
 }
 
-/* ── BOTTOM NAV ──────────────────────────────────── */
-.bottom-nav {
+/* ── ANIME TOP NAV ───────────────────────────────── */
+.anime-nav {
   position: fixed;
-  bottom: 0; left: 0; right: 0;
-  background: var(--charcoal);
-  border-top: 1px solid rgba(255,255,255,0.06);
+  top: 0; left: 0; right: 0;
+  z-index: 9999;
   display: flex;
-  padding: 6px 0 max(8px, env(safe-area-inset-bottom));
-  z-index: 200;
+  justify-content: center;
+  padding-top: 20px;
+  pointer-events: none;
+}
+
+.anime-nav-pill {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0,0,0,0.55);
+  border: 1px solid rgba(255,255,255,0.10);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 6px 8px;
+  border-radius: 999px;
+  pointer-events: auto;
+  animation: navSlideIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+@keyframes navSlideIn {
+  from { transform: translateY(-24px); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
 }
 
 .nav-item {
-  flex: 1;
+  position: relative;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 22px;
+  border-radius: 999px;
+  color: rgba(255,255,255,0.55);
+  transition: color 0.2s;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.nav-item:hover { color: rgba(255,255,255,0.85); }
+
+.nav-item.active {
+  color: #fff;
+  background: rgba(200,129,58,0.18);
+  box-shadow: 0 0 0 1px rgba(200,129,58,0.3) inset;
+}
+
+/* Mascot (absolute, slides over the pill) */
+.anime-mascot {
+  position: absolute;
+  top: -52px;
+  left: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 4px 8px;
-  cursor: pointer;
-  transition: all 0.2s;
+  transition: left 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  pointer-events: none;
+  animation: mascotBob 2s ease-in-out infinite;
 }
 
-.nav-icon {
-  width: 18px; height: 18px;
-  opacity: 0.35;
-  stroke: var(--cream);
-  display: block;
+@keyframes mascotBob {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-4px); }
 }
 
-.nav-label {
-  font-size: 9px;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  color: rgba(245,236,215,0.35);
-  font-family: 'DM Sans', sans-serif;
+.anime-mascot-tail {
+  width: 10px; height: 10px;
+  background: white;
+  transform: rotate(45deg);
+  margin-top: -5px;
+  border-radius: 2px;
 }
-
-.nav-item.active .nav-icon { opacity: 1; }
-.nav-item.active .nav-label { color: var(--ochre); }
 
 /* ── SPINNER (reuse existing styles.css def if present) ── */
 .spinner {

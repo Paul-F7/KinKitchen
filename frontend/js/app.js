@@ -44,12 +44,18 @@ const AkiApp = (() => {
 
     if (window.GlowingEffect) GlowingEffect.rescan();
 
-    // Bottom nav
+    // Top anime nav — show/hide
     const nav = document.getElementById('bottom-nav');
     if (nav) nav.style.display = NAV_SCREENS.has(screenName) ? 'flex' : 'none';
 
     document.querySelectorAll('.nav-item').forEach(item => {
       item.classList.toggle('active', item.dataset.nav === screenName);
+    });
+
+    // Slide mascot to active tab
+    requestAnimationFrame(() => {
+      const active = document.querySelector('.nav-item.active[data-nav]');
+      if (active) updateMascot(active);
     });
 
     // ── Screen side-effects ────────────────────────────────────────────────
@@ -111,18 +117,34 @@ const AkiApp = (() => {
     });
   }
 
+  // ── Anime nav mascot positioning ──────────────────────────────────────────
+  function updateMascot(activeItem) {
+    const mascot = document.getElementById('anime-mascot');
+    const pill   = document.querySelector('.anime-nav-pill');
+    if (!mascot || !pill || !activeItem) return;
+    const pillRect = pill.getBoundingClientRect();
+    const itemRect = activeItem.getBoundingClientRect();
+    // Center mascot over the active tab
+    const centerX = itemRect.left + itemRect.width / 2 - pillRect.left - 22; // 22 = half mascot width
+    mascot.style.left = centerX + 'px';
+  }
+
   // ── Bottom nav clicks ──────────────────────────────────────────────────────
   function initBottomNav() {
     document.querySelectorAll('.nav-item[data-nav]').forEach(item => {
       item.addEventListener('click', () => {
         const target = item.dataset.nav;
-        // Guard: require upload data for data-dependent screens
         if ((target === 'recipe' || target === 'story') && !state.uploadData) {
           goTo('upload');
           return;
         }
         goTo(target);
       });
+    });
+    // Position mascot on first render
+    requestAnimationFrame(() => {
+      const active = document.querySelector('.nav-item.active');
+      updateMascot(active);
     });
   }
 
