@@ -312,53 +312,57 @@
 
   <!-- ── SCREEN 7: CULTURAL STORY ── -->
   <div class="screen screen-story" data-screen="story">
-    <div class="story-ornament"></div>
-    <div class="story-eyebrow" id="story-eyebrow">The teaching behind the recipe</div>
-    <h2 class="story-title" id="story-title">–</h2>
-    <p class="story-body" id="story-body">–</p>
+    <div class="story-inner">
 
-    <!-- TTS audio chip -->
-    <div class="audio-chip" id="story-audio-chip" style="display:none; margin-bottom:28px;">
-      <div class="audio-play" id="story-play-btn">
-        <svg viewBox="0 0 10 12"><path d="M0 0l10 6-10 6V0z"/></svg>
+      <!-- Header -->
+      <div class="story-eyebrow" id="story-eyebrow">Anishinaabe Teaching</div>
+      <h2 class="story-title" id="story-title">–</h2>
+      <p class="story-body" id="story-body">–</p>
+
+      <!-- TTS audio chip -->
+      <div class="audio-chip" id="story-audio-chip" style="display:none; margin-bottom:24px;">
+        <div class="audio-play" id="story-play-btn">
+          <svg viewBox="0 0 10 12"><path d="M0 0l10 6-10 6V0z"/></svg>
+        </div>
+        <div class="audio-waveform">
+          <div class="wave-bar" style="height:50%"></div>
+          <div class="wave-bar"></div><div class="wave-bar"></div>
+          <div class="wave-bar"></div><div class="wave-bar"></div>
+          <div class="wave-bar"></div><div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+        </div>
+        <div class="audio-label">Hear this story</div>
       </div>
-      <div class="audio-waveform">
-        <div class="wave-bar" style="height:50%"></div>
-        <div class="wave-bar"></div>
-        <div class="wave-bar"></div>
-        <div class="wave-bar"></div>
-        <div class="wave-bar"></div>
-        <div class="wave-bar"></div>
-        <div class="wave-bar"></div>
-        <div class="wave-bar"></div>
+      <audio id="story-audio" style="display:none"></audio>
+
+      <!-- Video card -->
+      <div class="story-video-card">
+        <button class="story-video-card__trigger" id="story-generate-video-btn">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" width="16" height="16"><rect x="2" y="5" width="13" height="10" rx="2"/><path d="M15 8.5l3-2v7l-3-2v-3z"/></svg>
+          Generate video story
+        </button>
+
+        <div class="story-video-wrap" id="story-video-wrap" style="display:none">
+          <div class="story-video-loading" id="story-video-loading">
+            <span class="shimmer-text" id="story-shimmer-text">Generating your video story…</span>
+            <div class="shimmer-bar-track"><div class="shimmer-bar-fill" id="shimmer-bar-fill"></div></div>
+          </div>
+          <video id="story-video" class="story-video" src="/assets/story-video.mp4" controls playsinline style="display:none"></video>
+        </div>
       </div>
-      <div class="audio-label">Hear this story</div>
-    </div>
-    <audio id="story-audio" style="display:none"></audio>
 
-    <!-- Generate Video -->
-    <button class="btn-generate-video" id="story-generate-video-btn">
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" width="18" height="18"><rect x="2" y="5" width="13" height="10" rx="2"/><path d="M15 8.5l3-2v7l-3-2v-3z"/></svg>
-      Generate video story
-    </button>
-
-    <div class="story-video-wrap" id="story-video-wrap" style="display:none">
-      <div class="story-video-loading" id="story-video-loading">
-        <span class="shimmer-text" id="story-shimmer-text">Generating your video story…</span>
-        <div class="shimmer-bar-track"><div class="shimmer-bar-fill" id="shimmer-bar-fill"></div></div>
+      <!-- Attribution -->
+      <div class="story-attribution">
+        <div class="story-attr-label">Shared by</div>
+        <div class="story-attr-name" id="story-attr-name">Traditional knowledge · Anishinaabe</div>
       </div>
-      <video id="story-video" class="story-video" src="/assets/story-video.mp4" controls playsinline style="display:none"></video>
-    </div>
+      <p class="story-land" id="story-land"></p>
 
-    <div class="story-attribution">
-      <div class="story-attr-label">Shared by</div>
-      <div class="story-attr-name" id="story-attr-name">–</div>
-    </div>
-    <p class="story-land" id="story-land"></p>
+      <button class="btn-full" id="btn-story-restart" style="margin-top:28px; background:rgba(200,129,58,0.15); border:1.5px solid rgba(200,129,58,0.35); color:#F5B04A; font-weight:700; letter-spacing:0.08em;">
+        SCAN SOMETHING NEW →
+      </button>
 
-    <button class="btn-full btn-secondary" id="btn-story-restart" style="margin-top:32px;">
-      Scan something new →
-    </button>
+    </div>
   </div>
 
   <!-- ── SCREEN: 3D KITCHEN ── -->
