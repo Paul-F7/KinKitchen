@@ -150,10 +150,24 @@ const AkiApp = (() => {
       goTo('upload');
     });
 
-    // ── Recipe → 3D Kitchen ───────────────────────────────────────────────
+    // ── Recipe → 3D Kitchen (selected recipe from list) ──────────────────────
+    // If selected recipe matches their upload → 3D build with that image. Else → demo kitchen.
     $('btn-enter-kitchen3d')?.addEventListener('click', () => {
-      if (state.uploadData) _launchKitchen3d();
-      else goTo('upload');
+      const primaryFromUpload = state.uploadData?.suggestedRecipes?.[0]?.recipe;
+      const currentRecipe     = state.activeRecipe?.recipe || primaryFromUpload;
+      const isUploadRecipe   = primaryFromUpload && currentRecipe && currentRecipe.id === primaryFromUpload.id;
+
+      if (state.uploadData && isUploadRecipe) {
+        _launchKitchen3d();
+      } else if (state.uploadData) {
+        goTo('kitchen3d');
+        requestAnimationFrame(() => {
+          const container = document.getElementById('kitchen3d-container');
+          if (container && window.launchDemoKitchen) window.launchDemoKitchen(container);
+        });
+      } else {
+        goTo('upload');
+      }
     });
 
     // ── 3D Kitchen ───────────────────────────────────────────────────────────

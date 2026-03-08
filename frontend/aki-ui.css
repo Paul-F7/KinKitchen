@@ -927,6 +927,7 @@ body {
 }
 
 .aki-recipe-sug:hover { border-color: var(--ochre); }
+.aki-recipe-sug--selected { border-color: var(--ochre); background: rgba(200,129,58,0.08); box-shadow: 0 0 0 2px rgba(200,129,58,0.2); }
 .aki-recipe-sug__name { font-family: 'Playfair Display', serif; font-size: 15px; color: var(--charcoal); }
 .aki-recipe-sug__match { font-size: 11px; color: var(--text-muted); letter-spacing: 1px; }
 

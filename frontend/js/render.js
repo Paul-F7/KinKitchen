@@ -232,31 +232,42 @@ const AkiRender = (() => {
       cultWrap.style.display = 'none';
     }
 
-    // More suggested recipes (rest of list)
-    const sugWrap = document.getElementById('recipe-suggestions-wrap');
-    const sugList = document.getElementById('recipe-suggestions-list');
-    if (suggested.length > 1 && sugWrap && sugList) {
-      sugList.innerHTML = suggested.slice(1, 5).map(({ recipe, score }) => `
-        <div class="aki-recipe-sug" data-recipe-id="${escapeHtml(recipe.id || '')}">
+    // More recipes list — include primary; select one then "Cook this in 3D" appears below
+    const sugWrap   = document.getElementById('recipe-suggestions-wrap');
+    const sugList   = document.getElementById('recipe-suggestions-list');
+    const currentId = (AkiApp.state.activeRecipe?.recipe?.id || primaryMatch?.recipe?.id) || '';
+
+    if (suggested.length && sugWrap && sugList) {
+      if (!AkiApp.state.activeRecipe && primaryMatch) AkiApp.state.activeRecipe = primaryMatch;
+
+      sugList.innerHTML = suggested.slice(0, 5).map(({ recipe, score }) => {
+        const isSelected = (recipe.id || '') === currentId;
+        return `<div class="aki-recipe-sug${isSelected ? ' aki-recipe-sug--selected' : ''}" data-recipe-id="${escapeHtml(recipe.id || '')}">
           <span class="aki-recipe-sug__name">${escapeHtml(recipe.name)}</span>
           <span class="aki-recipe-sug__match">${Math.round(score * 100)}% match</span>
-        </div>`).join('');
+        </div>`;
+      }).join('');
       sugWrap.style.display = '';
 
-      // Click handler — swap primary recipe
-      sugList.addEventListener('click', e => {
-        const item = e.target.closest('.aki-recipe-sug');
-        if (!item) return;
-        const recId = item.dataset.recipeId;
-        const found = data.suggestedRecipes.find(s => s.recipe.id === recId);
-        if (found) {
-          AkiApp.state.activeRecipe = found;
-          // Quick update of hero
-          _set('recipe-title-ojibwe',  found.recipe.name);
-          _set('recipe-title-english', found.recipe.description);
-          _set('recipe-nation',        found.recipe.culture);
-        }
-      });
+      if (!sugList.dataset.recipeSelectListener) {
+        sugList.dataset.recipeSelectListener = '1';
+        sugList.addEventListener('click', e => {
+          const item = e.target.closest('.aki-recipe-sug');
+          if (!item) return;
+          const recId = item.dataset.recipeId;
+          const uploadData = AkiApp.state.uploadData;
+          const found = uploadData?.suggestedRecipes?.find(s => s.recipe.id === recId);
+          if (found) {
+            AkiApp.state.activeRecipe = found;
+            _set('recipe-title-ojibwe',  found.recipe.name);
+            _set('recipe-title-english', found.recipe.description);
+            _set('recipe-nation',        found.recipe.culture);
+            sugList.querySelectorAll('.aki-recipe-sug').forEach(el => {
+              el.classList.toggle('aki-recipe-sug--selected', el.dataset.recipeId === recId);
+            });
+          }
+        });
+      }
     } else if (sugWrap) {
       sugWrap.style.display = 'none';
     }

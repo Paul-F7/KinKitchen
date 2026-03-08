@@ -266,8 +266,10 @@ const CookingGuide = (() => {
 .cg-phase     { font-size:9.5px; font-weight:700; letter-spacing:.10em; text-transform:uppercase; color:#C8813A; margin-bottom:4px; }
 .cg-title-row  { display:flex; align-items:center; gap:10px; margin-bottom:8px; flex-wrap:wrap; }
 .cg-title      { font-family:'Playfair Display',serif; font-size:21px; font-weight:700; color:#1A0E04; line-height:1.2; flex:1; min-width:0; }
-.cg-btn-listen { flex-shrink:0; font-size:11px; padding:6px 10px; border-radius:8px; border:1px solid rgba(74,53,32,.25); background:#FEFBF5; color:#5C2A0E; cursor:pointer; font-family:inherit; }
-.cg-btn-listen:hover { background:#F5EDE0; }
+.cg-btn-listen, .cg-btn-voice { flex-shrink:0; font-size:11px; padding:6px 10px; border-radius:8px; border:1px solid rgba(74,53,32,.25); background:#FEFBF5; color:#5C2A0E; cursor:pointer; font-family:inherit; }
+.cg-btn-listen:hover, .cg-btn-voice:hover { background:#F5EDE0; }
+.cg-btn-voice.cg-btn-voice--listening { background:#C8813A; color:#FFF8EE; border-color:#C8813A; animation:cg-pulse 1s ease-in-out infinite; }
+@keyframes cg-pulse { 50% { opacity:.85; } }
 .cg-body-text { font-size:12.5px; line-height:1.65; color:#4A3520; margin-bottom:7px; }
 .cg-tip       { font-size:11.5px; line-height:1.55; color:#7A5530; font-style:italic;
                  border-left:2.5px solid #C8813A; padding-left:9px; margin-bottom:11px; }
@@ -302,6 +304,49 @@ const CookingGuide = (() => {
 .cg-btn-reset:hover { background:rgba(245,236,215,.14); }
 `;
 
+  /** Voice: say "next" or "continue" to advance step. Uses browser Speech Recognition; step audio is ElevenLabs. */
+  function _setupVoiceNext(overlayEl) {
+    const btn = overlayEl ? overlayEl.querySelector('#cg-btn-voice') : _q('#cg-btn-voice');
+    if (!btn) return;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      btn.title = 'Voice not supported in this browser';
+      btn.disabled = true;
+      return;
+    }
+    let recognition = null;
+    btn.addEventListener('click', () => {
+      if (recognition && recognition.rolling) {
+        recognition.stop();
+        return;
+      }
+      recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+      recognition.rolling = true;
+      btn.classList.add('cg-btn-voice--listening');
+      btn.textContent = 'Listening…';
+      recognition.onresult = (e) => {
+        const t = (e.results[0] && e.results[0][0] && e.results[0][0].transcript) || '';
+        const said = t.toLowerCase().trim();
+        if (/^(next|continue|next step|go( to)? next|next please|continue please)$/.test(said) || /next|continue/.test(said)) {
+          _nextStep();
+        }
+      };
+      recognition.onend = () => {
+        recognition.rolling = false;
+        btn.classList.remove('cg-btn-voice--listening');
+        btn.innerHTML = '&#127908; Voice';
+      };
+      recognition.onerror = () => {
+        btn.classList.remove('cg-btn-voice--listening');
+        btn.innerHTML = '&#127908; Voice';
+      };
+      try { recognition.start(); } catch (err) { btn.classList.remove('cg-btn-voice--listening'); btn.innerHTML = '&#127908; Voice'; }
+    });
+  }
+
   function _buildOverlay() {
     const el = document.createElement('div');
     el.id = 'cg-root';
@@ -325,6 +370,7 @@ const CookingGuide = (() => {
     <div class="cg-title-row">
       <div class="cg-title" id="cg-title"></div>
       <button type="button" class="cg-btn-listen" id="cg-btn-listen" title="Hear this step">&#128266; Listen</button>
+      <button type="button" class="cg-btn-voice" id="cg-btn-voice" title="Say &quot;next&quot; or &quot;continue&quot; to go to next step">&#127908; Voice</button>
     </div>
     <div class="cg-body-text" id="cg-body-text"></div>
     <div class="cg-tip"       id="cg-tip" style="display:none"></div>
@@ -343,6 +389,7 @@ const CookingGuide = (() => {
       const step = STEPS[_currentStep];
       if (step) _speakStep(step);
     });
+    _setupVoiceNext(el);
     let tx0 = 0;
     el.addEventListener('touchstart', e => { tx0 = e.changedTouches[0].clientX; }, { passive: true });
     el.addEventListener('touchend',   e => {
