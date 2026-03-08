@@ -64,7 +64,7 @@ const Step3Garlic = (() => {
   const KNIFE_ROTATE_DUR    = 0.5;
 
   // ── Mince phase ────────────────────────────────────────────────────────
-  const MINCE_HITS          = 4;
+  const MINCE_HITS          = 3;
   const MINCE_CYCLE         = 0.8;      // quick rock-chops
   const MINCE_DOWNSWING_END = 0.30;
   const MINCE_VIBRATE_END   = 0.42;
@@ -72,7 +72,6 @@ const Step3Garlic = (() => {
   const BITS_PER_HIT        = 10;
   const BIT_SCALE           = 0.002;
   const BIT_GROW_DUR        = 0.5;
-  const PILE_APPEAR_HIT     = 1;        // minced pile starts appearing on this mince hit
 
   // ── Easing helpers ─────────────────────────────────────────────────────
   function easeInOutCubic(t) {
@@ -101,7 +100,6 @@ const Step3Garlic = (() => {
   let _origRot        = null;
   let _onComplete     = null;
   let _cuttingBoard   = null;
-  let _boardStartPos  = null;
   let _boardEndPos    = null;
   let _pileStartPos   = null;
   let _pileFinalPos   = null;   // passed in from cookingGuide
@@ -174,19 +172,15 @@ const Step3Garlic = (() => {
       _mincedGarlic.scale.setScalar(0.001);
     }
 
-    // Set up cutting board slide-in
+    // Set up cutting board fade-in in place
     if (_cuttingBoard) {
       _boardEndPos = {
         x: _cuttingBoard.position.x,
         y: _cuttingBoard.position.y,
         z: _cuttingBoard.position.z,
       };
-      _boardStartPos = {
-        x: _boardEndPos.x + 1.2,
-        y: _boardEndPos.y,
-        z: _boardEndPos.z,
-      };
-      _cuttingBoard.position.set(_boardStartPos.x, _boardStartPos.y, _boardStartPos.z);
+      _cuttingBoard.visible = true;
+      _setBoardOpacity(0);
       _enterPhase(PHASE.MOVE_BOARD);
     } else {
       _enterPhase(PHASE.MOVE_GARLIC);
@@ -208,6 +202,11 @@ const Step3Garlic = (() => {
       _minceT         = 0;
       _mincePrevCycle = 0;
       _minceHitCount  = 0;
+      // Pre-show minced pile at one slice worth of scale before first hit
+      if (_mincedGarlic) {
+        _mincedGarlic.visible = true;
+        _mincedGarlic.scale.setScalar(_pileFinalScale / MINCE_HITS);
+      }
     }
     if (phase === PHASE.DONE) {
       _completed = true;
@@ -236,21 +235,16 @@ const Step3Garlic = (() => {
     _tickParticles(dt);
   }
 
-  // ── Phase: Slide cutting board in ──────────────────────────────────────
+  // ── Phase: Fade cutting board in place ─────────────────────────────────
   function _tickMoveBoard() {
-    if (!_cuttingBoard || !_boardStartPos || !_boardEndPos) {
+    if (!_cuttingBoard || !_boardEndPos) {
       _enterPhase(PHASE.MOVE_GARLIC);
       return;
     }
     const t = Math.min(_phaseT / MOVE_BOARD_DUR, 1);
-    const ease = easeInOutCubic(t);
-    _cuttingBoard.position.set(
-      lerp(_boardStartPos.x, _boardEndPos.x, ease),
-      lerp(_boardStartPos.y, _boardEndPos.y, ease),
-      lerp(_boardStartPos.z, _boardEndPos.z, ease)
-    );
+    _setBoardOpacity(easeInOutCubic(t));
     if (t >= 1) {
-      _cuttingBoard.position.set(_boardEndPos.x, _boardEndPos.y, _boardEndPos.z);
+      _setBoardOpacity(1);
       _enterPhase(PHASE.MOVE_GARLIC);
     }
   }
@@ -403,14 +397,14 @@ const Step3Garlic = (() => {
     if (norm < MINCE_DOWNSWING_END) {
       const p = norm / MINCE_DOWNSWING_END;
       ky   = lerp(minceTopY, _knifeSurface + 0.06, easeInQuad(p));
-      lean = lerp(0.05, -0.15, p);
+      lean = lerp(0.05, -1.2, p);
     } else if (norm < MINCE_VIBRATE_END) {
       ky   = _knifeSurface + 0.06 + Math.sin((norm - MINCE_DOWNSWING_END) * MINCE_CYCLE * 36) * 0.008;
-      lean = -0.15;
+      lean = -1.2;
     } else {
       const p = (norm - MINCE_VIBRATE_END) / (1 - MINCE_VIBRATE_END);
       ky   = lerp(_knifeSurface + 0.06, minceTopY, easeOutQuad(p));
-      lean = lerp(-0.15, 0.05, p);
+      lean = lerp(-1.2, 0.05, p);
     }
 
     _knifeGroup.position.set(_knifeRestX, ky, _knifeRestZ);
@@ -438,10 +432,10 @@ const Step3Garlic = (() => {
       _spawnParticle(MINCE_COLOR, BIT_SCALE, false);
     }
 
-    // Minced garlic pile appears
-    if (_mincedGarlic && _minceHitCount >= PILE_APPEAR_HIT) {
-      const pileProgress = (_minceHitCount - PILE_APPEAR_HIT + 1) / (MINCE_HITS - PILE_APPEAR_HIT + 1);
-      if (!_mincedGarlic.visible) _mincedGarlic.visible = true;
+    // Minced pile grows each hit; pile was pre-shown at 1/MINCE_HITS,
+    // so add one extra slice per hit and reach full size one hit early
+    if (_mincedGarlic) {
+      const pileProgress = Math.min(1, (_minceHitCount + 1) / MINCE_HITS);
       _mincedGarlic.scale.setScalar(_pileFinalScale * pileProgress);
     }
 
@@ -506,7 +500,7 @@ const Step3Garlic = (() => {
     );
     if (t >= 1) {
       _mincedGarlic.position.set(_pileFinalPos.x, _pileFinalPos.y, _pileFinalPos.z);
-      if (_cuttingBoard && _boardStartPos) {
+      if (_cuttingBoard) {
         _enterPhase(PHASE.SLIDE_BOARD_OUT);
       } else {
         _enterPhase(PHASE.DONE);
@@ -515,23 +509,18 @@ const Step3Garlic = (() => {
     }
   }
 
-  // ── Phase: Slide cutting board back out ─────────────────────────────────
+  // ── Phase: Fade cutting board out in place ──────────────────────────────
   function _tickSlideBoardOut() {
-    if (!_cuttingBoard || !_boardEndPos || !_boardStartPos) {
+    if (!_cuttingBoard) {
       _enterPhase(PHASE.DONE);
       _fireComplete();
       return;
     }
     const t = Math.min(_phaseT / SLIDE_BOARD_OUT_DUR, 1);
-    const ease = easeInOutCubic(t);
-    _cuttingBoard.position.set(
-      lerp(_boardEndPos.x, _boardStartPos.x, ease),
-      lerp(_boardEndPos.y, _boardStartPos.y, ease),
-      lerp(_boardEndPos.z, _boardStartPos.z, ease)
-    );
+    _setBoardOpacity(1 - easeInOutCubic(t));
     if (t >= 1) {
-      _cuttingBoard.position.set(_boardStartPos.x, _boardStartPos.y, _boardStartPos.z);
       _cuttingBoard.visible = false;
+      _setBoardOpacity(1);  // reset for future use
       _enterPhase(PHASE.DONE);
       _fireComplete();
     }
@@ -607,6 +596,19 @@ const Step3Garlic = (() => {
     }
   }
 
+  // ── Board opacity helper ───────────────────────────────────────────────
+  function _setBoardOpacity(opacity) {
+    if (!_cuttingBoard) return;
+    _cuttingBoard.traverse(c => {
+      if (!c.isMesh) return;
+      const mats = Array.isArray(c.material) ? c.material : [c.material];
+      mats.forEach(mat => {
+        mat.transparent = opacity < 1;
+        mat.opacity     = opacity;
+      });
+    });
+  }
+
   // ── Knife opacity helper ───────────────────────────────────────────────
   function _setKnifeOpacity(opacity) {
     if (!_knifeGroup) return;
@@ -648,7 +650,6 @@ const Step3Garlic = (() => {
     _knifeGroup     = null;
     _mincedGarlic   = null;
     _cuttingBoard   = null;
-    _boardStartPos  = null;
     _boardEndPos    = null;
     _pileStartPos   = null;
     _origPos        = null;

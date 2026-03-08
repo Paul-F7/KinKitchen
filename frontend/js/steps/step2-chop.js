@@ -55,12 +55,11 @@ const Step2Chop = (() => {
   const PILE_FINAL_POS = { x: 1.3190, y: 3.0000, z: 0.0354 };
 
   // ── White particle spawning ────────────────────────────────────────────
-  const MAX_HITS         = 4;
+  const MAX_HITS         = 3;
   const BITS_PER_HIT     = 14;
   const BIT_SCALE        = 0.0025;
   const BIT_GROW_DUR     = 0.5;
   const BIT_COLOR        = 0xF5F0E0;   // creamy white
-  const PILE_APPEAR_HIT  = 1;
 
   // ── Easing helpers ───────────────────────────────────────────────────────
   function easeInOutCubic(t) {
@@ -89,7 +88,6 @@ const Step2Chop = (() => {
   let _origRot      = null;       // onion original rotation
   let _onComplete   = null;
   let _cuttingBoard = null;
-  let _boardStartPos = null;
   let _boardEndPos   = null;
   let _pileStartPos  = null;
 
@@ -154,19 +152,15 @@ const Step2Chop = (() => {
       _dicedOnions.scale.setScalar(0.001);
     }
 
-    // Set up cutting board slide-in
+    // Set up cutting board fade-in in place
     if (_cuttingBoard) {
       _boardEndPos = {
         x: _cuttingBoard.position.x,
         y: _cuttingBoard.position.y,
         z: _cuttingBoard.position.z,
       };
-      _boardStartPos = {
-        x: _boardEndPos.x + 1.2,
-        y: _boardEndPos.y,
-        z: _boardEndPos.z,
-      };
-      _cuttingBoard.position.set(_boardStartPos.x, _boardStartPos.y, _boardStartPos.z);
+      _cuttingBoard.visible = true;
+      _setBoardOpacity(0);
       _enterPhase(PHASE.MOVE_BOARD);
     } else {
       _enterPhase(PHASE.MOVE_ONION);
@@ -183,6 +177,11 @@ const Step2Chop = (() => {
       _chopT        = 0;
       _prevCyclePos = 0;
       _hitCount     = 0;
+      // Pre-show diced pile at one slice worth of scale before first hit
+      if (_dicedOnions) {
+        _dicedOnions.visible = true;
+        _dicedOnions.scale.setScalar(_pileFinalScale / MAX_HITS);
+      }
     }
     if (phase === PHASE.DONE) {
       _completed = true;
@@ -209,21 +208,16 @@ const Step2Chop = (() => {
     _tickBits(dt);
   }
 
-  // ── Phase: Slide cutting board into centre ─────────────────────────────
+  // ── Phase: Fade cutting board in place ─────────────────────────────────
   function _tickMoveBoard() {
-    if (!_cuttingBoard || !_boardStartPos || !_boardEndPos) {
+    if (!_cuttingBoard || !_boardEndPos) {
       _enterPhase(PHASE.MOVE_ONION);
       return;
     }
     const t = Math.min(_phaseT / MOVE_BOARD_DUR, 1);
-    const ease = easeInOutCubic(t);
-    _cuttingBoard.position.set(
-      lerp(_boardStartPos.x, _boardEndPos.x, ease),
-      lerp(_boardStartPos.y, _boardEndPos.y, ease),
-      lerp(_boardStartPos.z, _boardEndPos.z, ease)
-    );
+    _setBoardOpacity(easeInOutCubic(t));
     if (t >= 1) {
-      _cuttingBoard.position.set(_boardEndPos.x, _boardEndPos.y, _boardEndPos.z);
+      _setBoardOpacity(1);
       _enterPhase(PHASE.MOVE_ONION);
     }
   }
@@ -285,14 +279,14 @@ const Step2Chop = (() => {
     if (norm < DOWNSWING_END) {
       const p = norm / DOWNSWING_END;
       ky   = lerp(_knifeTopY, _knifeSurface + 0.08, easeInQuad(p));
-      lean = lerp(0.05, -0.20, p);
+      lean = lerp(0.05, -1.3, p);
     } else if (norm < VIBRATE_END) {
       ky   = _knifeSurface + 0.08 + Math.sin((norm - DOWNSWING_END) * CHOP_CYCLE * 32) * 0.010;
-      lean = -0.20;
+      lean = -1.3;
     } else {
       const p = (norm - VIBRATE_END) / (1 - VIBRATE_END);
       ky   = lerp(_knifeSurface + 0.08, _knifeTopY, easeOutQuad(p));
-      lean = lerp(-0.20, 0.05, p);
+      lean = lerp(-1.3, 0.05, p);
     }
     _knifeGroup.position.set(_knifeRestX, ky, _knifeRestZ);
     _knifeGroup.rotation.x = lean;
@@ -317,10 +311,10 @@ const Step2Chop = (() => {
       _spawnBit();
     }
 
-    // Diced onions pile appears starting on the designated hit
-    if (_dicedOnions && _hitCount >= PILE_APPEAR_HIT) {
-      const pileProgress = (_hitCount - PILE_APPEAR_HIT + 1) / (MAX_HITS - PILE_APPEAR_HIT + 1);
-      if (!_dicedOnions.visible) _dicedOnions.visible = true;
+    // Diced onions pile grows each hit; pile was pre-shown at 1/MAX_HITS,
+    // so add one extra slice per hit and reach full size one hit early
+    if (_dicedOnions) {
+      const pileProgress = Math.min(1, (_hitCount + 1) / MAX_HITS);
       _dicedOnions.scale.setScalar(_pileFinalScale * pileProgress);
     }
 
@@ -384,7 +378,7 @@ const Step2Chop = (() => {
     );
     if (t >= 1) {
       _dicedOnions.position.set(PILE_FINAL_POS.x, PILE_FINAL_POS.y, PILE_FINAL_POS.z);
-      if (_cuttingBoard && _boardStartPos) {
+      if (_cuttingBoard) {
         _enterPhase(PHASE.SLIDE_BOARD_OUT);
       } else {
         _enterPhase(PHASE.DONE);
@@ -393,23 +387,18 @@ const Step2Chop = (() => {
     }
   }
 
-  // ── Phase: Slide cutting board back out ────────────────────────────────
+  // ── Phase: Fade cutting board out in place ────────────────────────────
   function _tickSlideBoardOut() {
-    if (!_cuttingBoard || !_boardEndPos || !_boardStartPos) {
+    if (!_cuttingBoard) {
       _enterPhase(PHASE.DONE);
       _fireComplete();
       return;
     }
     const t = Math.min(_phaseT / SLIDE_BOARD_OUT_DUR, 1);
-    const ease = easeInOutCubic(t);
-    _cuttingBoard.position.set(
-      lerp(_boardEndPos.x, _boardStartPos.x, ease),
-      lerp(_boardEndPos.y, _boardStartPos.y, ease),
-      lerp(_boardEndPos.z, _boardStartPos.z, ease)
-    );
+    _setBoardOpacity(1 - easeInOutCubic(t));
     if (t >= 1) {
-      _cuttingBoard.position.set(_boardStartPos.x, _boardStartPos.y, _boardStartPos.z);
       _cuttingBoard.visible = false;
+      _setBoardOpacity(1);  // reset for future use
       _enterPhase(PHASE.DONE);
       _fireComplete();
     }
@@ -472,6 +461,19 @@ const Step2Chop = (() => {
     }
   }
 
+  // ── Board opacity helper ───────────────────────────────────────────────
+  function _setBoardOpacity(opacity) {
+    if (!_cuttingBoard) return;
+    _cuttingBoard.traverse(c => {
+      if (!c.isMesh) return;
+      const mats = Array.isArray(c.material) ? c.material : [c.material];
+      mats.forEach(mat => {
+        mat.transparent = opacity < 1;
+        mat.opacity     = opacity;
+      });
+    });
+  }
+
   // ── Knife opacity helper ───────────────────────────────────────────────
   function _setKnifeOpacity(opacity) {
     if (!_knifeGroup) return;
@@ -508,7 +510,6 @@ const Step2Chop = (() => {
     _knifeGroup    = null;
     _dicedOnions   = null;
     _cuttingBoard  = null;
-    _boardStartPos = null;
     _boardEndPos   = null;
     _pileStartPos  = null;
     _origPos       = null;

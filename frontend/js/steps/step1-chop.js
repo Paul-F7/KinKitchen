@@ -85,7 +85,6 @@ const Step1Chop = (() => {
   let _origScale    = 1;
   let _onComplete   = null;
   let _cuttingBoard = null;       // cutting board mesh
-  let _boardStartPos = null;      // board off-screen start position
   let _boardEndPos   = null;      // board final center position
   let _pileStartPos  = null;      // pile position when MOVE_PILE begins
 
@@ -174,19 +173,15 @@ const Step1Chop = (() => {
       _orangePile.scale.setScalar(0.001);
     }
 
-    // Set up cutting board slide-in: start off to the right, slide to center
+    // Set up cutting board fade-in in place
     if (_cuttingBoard) {
       _boardEndPos = {
         x: _cuttingBoard.position.x,
         y: _cuttingBoard.position.y,
         z: _cuttingBoard.position.z,
       };
-      _boardStartPos = {
-        x: _boardEndPos.x + 1.2,  // off to the right
-        y: _boardEndPos.y,
-        z: _boardEndPos.z,
-      };
-      _cuttingBoard.position.set(_boardStartPos.x, _boardStartPos.y, _boardStartPos.z);
+      _cuttingBoard.visible = true;
+      _setBoardOpacity(0);
       _enterPhase(PHASE.MOVE_BOARD);
     } else {
       // No board to animate, go straight to squash
@@ -230,24 +225,18 @@ const Step1Chop = (() => {
     _tickCubes(dt);
   }
 
-  // ── Phase 0: Slide cutting board into centre ─────────────────────────────
+  // ── Phase 0: Fade cutting board in place ─────────────────────────────────
   function _tickMoveBoard() {
-    if (!_cuttingBoard || !_boardStartPos || !_boardEndPos) {
+    if (!_cuttingBoard || !_boardEndPos) {
       _enterPhase(PHASE.MOVE_SQUASH);
       return;
     }
 
     const t = Math.min(_phaseT / MOVE_BOARD_DUR, 1);
-    const ease = easeInOutCubic(t);
-
-    _cuttingBoard.position.set(
-      lerp(_boardStartPos.x, _boardEndPos.x, ease),
-      lerp(_boardStartPos.y, _boardEndPos.y, ease),
-      lerp(_boardStartPos.z, _boardEndPos.z, ease)
-    );
+    _setBoardOpacity(easeInOutCubic(t));
 
     if (t >= 1) {
-      _cuttingBoard.position.set(_boardEndPos.x, _boardEndPos.y, _boardEndPos.z);
+      _setBoardOpacity(1);
       _enterPhase(PHASE.MOVE_SQUASH);
     }
   }
@@ -317,16 +306,16 @@ const Step1Chop = (() => {
       // Downswing: top → bottom
       const p = norm / DOWNSWING_END;
       ky   = lerp(_knifeTopY, _knifeSurface + 0.08, easeInQuad(p));
-      lean = lerp(0.05, -0.20, p);
+      lean = lerp(0.05, -1.3, p);
     } else if (norm < VIBRATE_END) {
       // Impact vibrate
       ky   = _knifeSurface + 0.08 + Math.sin((norm - DOWNSWING_END) * CHOP_CYCLE * 32) * 0.010;
-      lean = -0.20;
+      lean = -1.3;
     } else {
       // Upswing: bottom → top
       const p = (norm - VIBRATE_END) / (1 - VIBRATE_END);
       ky   = lerp(_knifeSurface + 0.08, _knifeTopY, easeOutQuad(p));
-      lean = lerp(-0.20, 0.05, p);
+      lean = lerp(-1.3, 0.05, p);
     }
 
     _knifeGroup.position.set(_knifeRestX, ky, _knifeRestZ);
@@ -427,8 +416,8 @@ const Step1Chop = (() => {
 
     if (t >= 1) {
       _orangePile.position.set(PILE_FINAL_POS.x, PILE_FINAL_POS.y, PILE_FINAL_POS.z);
-      // Slide board away after pile reaches destination
-      if (_cuttingBoard && _boardStartPos) {
+      // Fade board away after pile reaches destination
+      if (_cuttingBoard) {
         _enterPhase(PHASE.SLIDE_BOARD_OUT);
       } else {
         _enterPhase(PHASE.DONE);
@@ -437,26 +426,20 @@ const Step1Chop = (() => {
     }
   }
 
-  // ── Phase 6: Slide cutting board back out ─────────────────────────────────
+  // ── Phase 6: Fade cutting board out in place ──────────────────────────────
   function _tickSlideBoardOut() {
-    if (!_cuttingBoard || !_boardEndPos || !_boardStartPos) {
+    if (!_cuttingBoard) {
       _enterPhase(PHASE.DONE);
       _fireComplete();
       return;
     }
 
     const t = Math.min(_phaseT / SLIDE_BOARD_OUT_DUR, 1);
-    const ease = easeInOutCubic(t);
-
-    _cuttingBoard.position.set(
-      lerp(_boardEndPos.x, _boardStartPos.x, ease),
-      lerp(_boardEndPos.y, _boardStartPos.y, ease),
-      lerp(_boardEndPos.z, _boardStartPos.z, ease)
-    );
+    _setBoardOpacity(1 - easeInOutCubic(t));
 
     if (t >= 1) {
-      _cuttingBoard.position.set(_boardStartPos.x, _boardStartPos.y, _boardStartPos.z);
       _cuttingBoard.visible = false;
+      _setBoardOpacity(1);  // reset for future use
       _enterPhase(PHASE.DONE);
       _fireComplete();
     }
@@ -526,6 +509,19 @@ const Step1Chop = (() => {
     }
   }
 
+  // ── Board opacity helper ─────────────────────────────────────────────────
+  function _setBoardOpacity(opacity) {
+    if (!_cuttingBoard) return;
+    _cuttingBoard.traverse(c => {
+      if (!c.isMesh) return;
+      const mats = Array.isArray(c.material) ? c.material : [c.material];
+      mats.forEach(mat => {
+        mat.transparent = opacity < 1;
+        mat.opacity     = opacity;
+      });
+    });
+  }
+
   // ── Knife opacity helper ─────────────────────────────────────────────────
   function _setKnifeOpacity(opacity) {
     if (!_knifeGroup) return;
@@ -566,7 +562,6 @@ const Step1Chop = (() => {
     _knifeGroup    = null;
     _orangePile    = null;
     _cuttingBoard  = null;
-    _boardStartPos = null;
     _boardEndPos   = null;
     _pileStartPos  = null;
     _origPos       = null;
