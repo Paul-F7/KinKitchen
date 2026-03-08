@@ -79,6 +79,12 @@ function extractFoodDetections(lvisData) {
  * Run content analysis on an image URL.
  * Returns { caption, foodDetected: [{ label, confidence, boundingBox }], error }.
  */
+/**
+ * Only calls captioning — LVIS bounding boxes are already returned during
+ * upload via detection:'lvis', so calling it again here was a duplicate that
+ * doubled rate-limit consumption. Captioning is best-effort: if we hit a 429
+ * we return gracefully so the rest of the upload pipeline still works.
+ */
 async function analyzeImageContent(imageUrl) {
   if (!cloudName || !apiKey || !apiSecret) {
     return { caption: null, foodDetected: [], error: 'Cloudinary credentials not configured' };
@@ -89,20 +95,18 @@ async function analyzeImageContent(imageUrl) {
 
   try {
     const captionRes = await analyzeRequest('captioning', { source });
-    console.log('[cloudinary] Full captioning response:', JSON.stringify(captionRes, null, 2));
     const capData = captionRes?.data?.analysis?.data;
     if (capData?.caption) result.caption = capData.caption;
+    console.log('[cloudinary] Caption:', result.caption);
   } catch (err) {
-    result.error = err.message || 'Captioning failed';
-    return result;
-  }
-
-  try {
-    const lvisRes = await analyzeRequest('lvis', { source });
-    console.log('[cloudinary] Full LVIS response:', JSON.stringify(lvisRes, null, 2));
-    result.foodDetected = extractFoodDetections(lvisRes);
-  } catch {
-    // lvis optional
+    const msg = err.message || '';
+    if (msg.includes('429') || /rate.?limit/i.test(msg)) {
+      console.warn('[cloudinary] Captioning rate-limited — skipping, continuing upload');
+    } else {
+      console.error('[cloudinary] Captioning error:', msg);
+    }
+    // Non-fatal — return what we have (no caption) so the rest of the pipeline works
+    result.error = msg;
   }
 
   return result;

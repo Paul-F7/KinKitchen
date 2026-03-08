@@ -102,14 +102,15 @@ router.post('/', multerUpload.single('file'), async (req, res) => {
       console.error('[upload] Gemini error:', err.message);
     }
 
-    // 3. Cloudinary content analysis (images only)
+    // 3. Cloudinary captioning (images only, best-effort — 429 is non-fatal)
     let contentAnalysis = null;
     if (mediaType === 'image') {
       try {
         contentAnalysis = await analyzeImageContent(url);
       } catch (err) {
-        contentAnalysis = { error: err.message || 'Content analysis failed' };
-        console.error('[upload] Cloudinary content analysis error:', err.message);
+        // Never let content analysis failure break the upload
+        contentAnalysis = { caption: null, foodDetected: [], error: err.message || 'Content analysis failed' };
+        console.warn('[upload] Content analysis skipped:', err.message);
       }
     }
 
