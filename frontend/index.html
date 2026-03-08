@@ -168,60 +168,66 @@
 
   <!-- ── SCREEN 4: DETECTION RESULT ── -->
   <div class="screen screen-detect" data-screen="detect">
-    <div class="ipad-scroll-container">
-      <div class="ipad-header-text">
-        <p class="ipad-eyebrow">Ingredient Detected</p>
-        <h2 class="ipad-title" id="detect-name">–</h2>
-        <p class="ipad-subtitle" id="detect-ojibwe">–</p>
+    <div class="detect-monitor">
+
+      <!-- Monitor title bar -->
+      <div class="monitor-bar">
+        <div class="monitor-dots">
+          <span class="mdot mdot-r"></span>
+          <span class="mdot mdot-y"></span>
+          <span class="mdot mdot-g"></span>
+        </div>
+        <span class="monitor-label">INGREDIENT ANALYSIS</span>
+        <div style="width:52px"></div>
       </div>
 
-      <div class="ipad-frame" id="ipad-frame">
-        <div class="ipad-device">
-          <!-- iPad camera dot -->
-          <div class="ipad-camera"></div>
-          <!-- iPad screen -->
-          <div class="ipad-screen">
-            <div class="detect-image-area">
-              <img id="detect-img" src="" alt="" crossorigin="anonymous"
-                style="width:100%;height:100%;object-fit:cover;display:none">
-              <div class="detect-img-placeholder" id="detect-placeholder">🌿</div>
-              <div class="scan-line"></div>
-              <div class="bbox-overlay" id="bbox-overlay" style="display:none">
-                <div class="bbox-label" id="bbox-label">Ingredient · –%</div>
-              </div>
-            </div>
-
-            <div class="detect-panel">
-              <div class="detect-tags" id="detect-tags"></div>
-              <div class="detect-ingredient-chips" id="detect-ingredient-chips" style="display:none"></div>
-
-              <div class="audio-chip glowing-card" id="audio-chip" style="display:none">
-                <div class="audio-play" id="audio-play-btn">
-                  <svg viewBox="0 0 10 12"><path d="M0 0l10 6-10 6V0z"/></svg>
-                </div>
-                <div class="audio-waveform" id="audio-waveform">
-                  <div class="wave-bar" style="height:50%"></div>
-                  <div class="wave-bar"></div><div class="wave-bar"></div>
-                  <div class="wave-bar"></div><div class="wave-bar"></div>
-                  <div class="wave-bar"></div><div class="wave-bar"></div>
-                  <div class="wave-bar"></div>
-                </div>
-                <div class="audio-label">Hear Ojibwe name</div>
-              </div>
-
-              <audio id="detect-audio" style="display:none"></audio>
-
-              <button class="btn-full" id="btn-find-recipes">Find recipes with this ingredient</button>
-              <button class="btn-full" id="btn-scan-more"
-                style="background:rgba(255,255,255,0.06);color:rgba(245,236,215,0.6);">
-                Scan more ingredients
-              </button>
-            </div>
-          </div>
-          <!-- iPad home bar -->
-          <div class="ipad-home-bar"></div>
+      <!-- Image pane -->
+      <div class="detect-image-area">
+        <img id="detect-img" src="" alt="" crossorigin="anonymous"
+          style="width:100%;height:100%;object-fit:cover;display:none">
+        <div class="detect-img-placeholder" id="detect-placeholder">🌿</div>
+        <div class="scan-line"></div>
+        <div class="bbox-overlay" id="bbox-overlay" style="display:none">
+          <div class="bbox-label" id="bbox-label">Ingredient · –%</div>
+        </div>
+        <!-- Name overlay on image -->
+        <div class="detect-name-overlay">
+          <p class="detect-eyebrow">Ingredient Detected</p>
+          <h2 class="detect-name-text" id="detect-name">–</h2>
+          <p class="detect-ojibwe-text" id="detect-ojibwe">–</p>
         </div>
       </div>
+
+      <!-- Info panel -->
+      <div class="detect-panel">
+        <div class="detect-tags" id="detect-tags"></div>
+        <div class="detect-ingredient-chips" id="detect-ingredient-chips" style="display:none"></div>
+
+        <div class="audio-chip glowing-card" id="audio-chip" style="display:none">
+          <div class="audio-play" id="audio-play-btn">
+            <svg viewBox="0 0 10 12"><path d="M0 0l10 6-10 6V0z"/></svg>
+          </div>
+          <div class="audio-waveform" id="audio-waveform">
+            <div class="wave-bar" style="height:50%"></div>
+            <div class="wave-bar"></div><div class="wave-bar"></div>
+            <div class="wave-bar"></div><div class="wave-bar"></div>
+            <div class="wave-bar"></div><div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+          </div>
+          <div class="audio-label">Hear Ojibwe name</div>
+        </div>
+
+        <audio id="detect-audio" style="display:none"></audio>
+
+        <div class="detect-actions">
+          <button class="btn-full" id="btn-find-recipes">Find recipes with this ingredient</button>
+          <button class="btn-full" id="btn-scan-more"
+            style="background:rgba(255,255,255,0.06);color:rgba(245,236,215,0.6);">
+            Scan more ingredients
+          </button>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -415,12 +421,35 @@
         </div>
       </div>
 
-      <!-- Pill with sliding active indicator -->
+      <!-- Progress stepper pill — 4 steps, auto-advances with page flow -->
       <div class="anime-nav-pill" id="anime-nav-pill">
-        <div class="nav-active-indicator" id="nav-active-indicator"></div>
-        <div class="nav-item active" data-nav="splash" id="nav-home">Scan</div>
-        <div class="nav-item" data-nav="recipe" id="nav-recipes">Recipes</div>
-        <div class="nav-item" data-nav="story" id="nav-story">Stories</div>
+
+        <div class="progress-step active" data-nav="upload" id="nav-scan">
+          <div class="progress-step-dot"><span class="step-num">1</span><svg class="step-check" viewBox="0 0 12 10"><polyline points="1,5 4.5,9 11,1" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="progress-step-label">Scan</span>
+        </div>
+
+        <div class="progress-connector" id="connector-1"></div>
+
+        <div class="progress-step" data-nav="detect" id="nav-identify">
+          <div class="progress-step-dot"><span class="step-num">2</span><svg class="step-check" viewBox="0 0 12 10"><polyline points="1,5 4.5,9 11,1" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="progress-step-label">Identify</span>
+        </div>
+
+        <div class="progress-connector" id="connector-2"></div>
+
+        <div class="progress-step" data-nav="recipe" id="nav-recipes">
+          <div class="progress-step-dot"><span class="step-num">3</span><svg class="step-check" viewBox="0 0 12 10"><polyline points="1,5 4.5,9 11,1" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="progress-step-label">Cook</span>
+        </div>
+
+        <div class="progress-connector" id="connector-3"></div>
+
+        <div class="progress-step" data-nav="story" id="nav-story">
+          <div class="progress-step-dot"><span class="step-num">4</span><svg class="step-check" viewBox="0 0 12 10"><polyline points="1,5 4.5,9 11,1" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="progress-step-label">Story</span>
+        </div>
+
       </div>
 
     </div>

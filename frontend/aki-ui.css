@@ -646,158 +646,113 @@ body {
 }
 
 /* ── SCREEN 4: DETECTION ───────────────────────────── */
+/* ── SCREEN 4: DETECT ─────────────────────────────── */
 .screen-detect {
   background: #0a0a0a;
   background-image: radial-gradient(circle, rgba(200,129,58,0.07) 1px, transparent 1px);
   background-size: 28px 28px;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   min-height: 100vh;
-  padding: 80px 40px 100px;
+  padding: 80px 24px 40px;
   box-sizing: border-box;
   overflow-y: auto;
-  perspective: 1000px;
 }
 
-/* ── ContainerScroll wrapper ── */
-.ipad-scroll-container {
+/* ── Monitor card — centered, self-contained ── */
+.detect-monitor {
   width: 100%;
-  max-width: 900px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-/* Header text — translates up slightly as card animates in */
-.ipad-header-text {
-  text-align: center;
-  margin-bottom: 40px;
-  animation: detectHeaderIn 0.7s cubic-bezier(0.16,1,0.3,1) both;
-}
-
-@keyframes detectHeaderIn {
-  from { opacity: 0; transform: translateY(24px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.ipad-eyebrow {
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: rgba(200,129,58,0.75);
-  margin: 0 0 12px;
-  font-family: 'DM Sans', sans-serif;
-}
-
-.ipad-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 52px;
-  font-weight: 700;
-  color: #F5E8CC;
-  margin: 0 0 8px;
-  line-height: 1.1;
-}
-
-.ipad-subtitle {
-  font-size: 16px;
-  color: rgba(245,232,204,0.4);
-  margin: 0;
-  font-style: italic;
-  letter-spacing: 0.02em;
-}
-
-/* ── Laptop frame (ContainerScroll Card equivalent) ── */
-.ipad-frame {
-  width: 100%;
-  animation: laptopTiltIn 0.9s cubic-bezier(0.16,1,0.3,1) 0.15s both;
-  transform-origin: center bottom;
-}
-
-@keyframes laptopTiltIn {
-  from {
-    opacity: 0;
-    transform: rotateX(22deg) scale(1.04) translateY(60px);
-    box-shadow: 0 0 #0000004d, 0 9px 20px #0000004a;
-  }
-  to {
-    opacity: 1;
-    transform: rotateX(0deg) scale(1) translateY(0);
-  }
-}
-
-.ipad-device {
-  background: #222;
-  border-radius: 20px;
-  border: 4px solid #3a3a3a;
+  max-width: 640px;
+  background: #131313;
+  border-radius: 18px;
+  border: 1px solid rgba(200,129,58,0.25);
   box-shadow:
-    0 0 #0000004d,
-    0 9px 20px #0000004a,
-    0 37px 37px #00000042,
-    0 84px 50px #00000026,
-    0 0 60px rgba(200,129,58,0.08);
+    0 0 0 1px rgba(200,129,58,0.08),
+    0 24px 60px rgba(0,0,0,0.8),
+    0 0 40px rgba(200,129,58,0.06);
   overflow: hidden;
-  position: relative;
-  width: 100%;
+  animation: monitorIn 0.7s cubic-bezier(0.16,1,0.3,1) both;
 }
 
-/* MacBook-style top bar inside device */
-.ipad-camera {
-  width: 100%;
-  height: 36px;
-  background: #2a2a2a;
+@keyframes monitorIn {
+  from { opacity: 0; transform: translateY(32px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+/* Top bar */
+.monitor-bar {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: #1a1a1a;
   border-bottom: 1px solid rgba(255,255,255,0.06);
-  position: relative;
-  flex-shrink: 0;
 }
 
-.ipad-camera::after {
-  content: '';
-  width: 8px; height: 8px;
-  background: #111;
-  border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.12);
-}
-
-/* Traffic light dots */
-.ipad-camera::before {
-  content: '';
-  position: absolute;
-  left: 14px; top: 50%;
-  transform: translateY(-50%);
-  width: 36px; height: 10px;
-  background:
-    radial-gradient(circle 5px at 5px 5px, #ff5f57 0%, #ff5f57 100%) no-repeat 0 0,
-    radial-gradient(circle 5px at 5px 5px, #ffbd2e 0%, #ffbd2e 100%) no-repeat 14px 0,
-    radial-gradient(circle 5px at 5px 5px, #28c840 0%, #28c840 100%) no-repeat 28px 0;
-}
-
-.ipad-screen {
-  background: #111;
-  overflow: hidden;
+.monitor-dots {
   display: flex;
-  flex-direction: column;
-  min-height: 500px;
+  gap: 6px;
+  align-items: center;
 }
 
-.ipad-home-bar {
-  width: 100px;
-  height: 4px;
-  background: rgba(255,255,255,0.15);
-  border-radius: 2px;
-  margin: 10px auto;
+.mdot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+}
+.mdot-r { background: #ff5f57; }
+.mdot-y { background: #ffbd2e; }
+.mdot-g { background: #28c840; }
+
+.monitor-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: rgba(200,129,58,0.6);
 }
 
+/* Image pane */
 .detect-image-area {
   position: relative;
   width: 100%;
-  height: 55vw;
-  max-height: 340px;
-  background: #111;
+  height: 280px;
+  background: #0d0d0d;
   overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* Name overlay on image bottom */
+.detect-name-overlay {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%);
+  padding: 32px 20px 16px;
+}
+
+.detect-eyebrow {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(200,129,58,0.8);
+  margin: 0 0 4px;
+}
+
+.detect-name-text {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: #F5E8CC;
+  margin: 0 0 2px;
+  line-height: 1.15;
+}
+
+.detect-ojibwe-text {
+  font-size: 13px;
+  color: rgba(245,232,204,0.45);
+  margin: 0;
+  font-style: italic;
 }
 
 .detect-img-placeholder {
@@ -852,13 +807,16 @@ body {
 }
 
 .detect-panel {
-  flex: 1;
-  background: var(--charcoal);
-  padding: 32px 28px;
-  border-radius: 20px 20px 0 0;
-  margin-top: -20px;
-  position: relative;
-  z-index: 2;
+  background: #131313;
+  padding: 20px 22px 22px;
+  border-top: 1px solid rgba(200,129,58,0.12);
+}
+
+.detect-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
 }
 
 .detect-ingredient-name {
@@ -1576,17 +1534,18 @@ body {
   pointer-events: none;
 }
 
-/* Mascot track — translateX set by JS, spring transition */
+/* Mascot track — FIXED so it's never clipped by anything */
 .anime-mascot-track {
-  position: absolute;
-  bottom: calc(100% - 8px);
-  left: 0;
+  position: fixed;
+  top: 14px;       /* matches .anime-nav padding-top */
+  left: 0;         /* JS sets this to tab center - 30px */
   width: 60px;
   display: flex;
   justify-content: center;
   pointer-events: none;
-  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
-  will-change: transform;
+  transition: left 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  will-change: left;
+  z-index: 10000;
 }
 
 /* Mascot body — bobs vertically */
@@ -1654,20 +1613,20 @@ body {
   margin-top: -3px;
 }
 
-/* Pill */
+/* ── Progress stepper pill ── */
 .anime-nav-pill {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 0;
   background: rgba(8,8,8,0.82);
   border: 1px solid rgba(255,255,255,0.09);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  padding: 5px 6px;
+  padding: 10px 16px;
   border-radius: 999px;
   pointer-events: auto;
   box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+  gap: 0;
   animation: navSlideIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
 }
 
@@ -1676,45 +1635,110 @@ body {
   to   { transform: translateY(0);     opacity: 1; }
 }
 
-/* Sliding gold indicator — JS sets left + width */
-.nav-active-indicator {
-  position: absolute;
-  top: 5px;
-  height: calc(100% - 10px);
-  border-radius: 999px;
-  background: rgba(200,129,58,0.20);
-  box-shadow: 0 0 0 1px rgba(200,129,58,0.35) inset;
-  pointer-events: none;
-  z-index: 0;
-  transition: left 0.45s cubic-bezier(0.34,1.56,0.64,1),
-              width 0.3s cubic-bezier(0.34,1.56,0.64,1);
-  will-change: left, width;
-  animation: glowPulse 2s ease-in-out infinite;
-}
-
-@keyframes glowPulse {
-  0%, 100% { box-shadow: 0 0 0 1px rgba(200,129,58,0.35) inset, 0 0 12px rgba(200,129,58,0.12); }
-  50%       { box-shadow: 0 0 0 1px rgba(200,129,58,0.55) inset, 0 0 28px rgba(200,129,58,0.28); }
-}
-
-.nav-item {
+/* Connector line between steps */
+.progress-connector {
+  width: 36px;
+  height: 2px;
+  background: rgba(255,255,255,0.10);
+  border-radius: 2px;
+  flex-shrink: 0;
+  transition: background 0.4s ease;
   position: relative;
-  z-index: 1;
-  cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  padding: 9px 26px;
-  border-radius: 999px;
-  color: rgba(255,255,255,0.40);
-  transition: color 0.2s, background 0.2s;
+  overflow: hidden;
+}
+
+/* Fill animation when step is completed */
+.progress-connector.completed::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #C8813A, #F5B04A);
+  border-radius: 2px;
+  animation: connectorFill 0.4s ease forwards;
+}
+
+@keyframes connectorFill {
+  from { transform: scaleX(0); transform-origin: left; }
+  to   { transform: scaleX(1); transform-origin: left; }
+}
+
+/* Each step */
+.progress-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  cursor: default;
   user-select: none;
+  min-width: 56px;
+}
+
+.progress-step-dot {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: 1.5px solid rgba(255,255,255,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  position: relative;
+}
+
+.step-num {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.30);
+  transition: opacity 0.2s;
+}
+
+.step-check {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 12px; height: 10px;
+  opacity: 0;
+  transition: opacity 0.2s 0.1s;
+}
+
+.progress-step-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.28);
+  transition: color 0.3s;
   white-space: nowrap;
 }
 
-.nav-item:hover          { color: rgba(255,255,255,0.80); }
-.nav-item.nav-hovered:not(.active) { background: rgba(255,255,255,0.06); }
-.nav-item.active         { color: #F5B04A; }
+/* ── Active step ── */
+.progress-step.active .progress-step-dot {
+  background: rgba(200,129,58,0.25);
+  border-color: #C8813A;
+  box-shadow: 0 0 0 4px rgba(200,129,58,0.12),
+              0 0 16px rgba(200,129,58,0.30);
+  animation: stepGlow 2s ease-in-out infinite;
+}
+
+@keyframes stepGlow {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(200,129,58,0.10), 0 0 14px rgba(200,129,58,0.20); }
+  50%       { box-shadow: 0 0 0 6px rgba(200,129,58,0.20), 0 0 26px rgba(200,129,58,0.40); }
+}
+
+.progress-step.active .step-num { color: #F5B04A; }
+.progress-step.active .progress-step-label { color: #F5B04A; font-weight: 700; }
+
+/* ── Completed step ── */
+.progress-step.completed .progress-step-dot {
+  background: #C8813A;
+  border-color: #C8813A;
+  box-shadow: 0 0 10px rgba(200,129,58,0.40);
+}
+
+.progress-step.completed .step-num  { opacity: 0; }
+.progress-step.completed .step-check { opacity: 1; }
+.progress-step.completed .progress-step-label { color: rgba(245,176,74,0.65); }
 
 /* ── SPINNER (reuse existing styles.css def if present) ── */
 .spinner {

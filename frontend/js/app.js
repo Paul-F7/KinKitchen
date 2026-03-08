@@ -44,17 +44,15 @@ const AkiApp = (() => {
 
     if (window.GlowingEffect) GlowingEffect.rescan();
 
-    // Top anime nav — show/hide
+    // Progress stepper — always show nav, update step states
     const nav = document.getElementById('bottom-nav');
-    if (nav) nav.style.display = NAV_SCREENS.has(screenName) ? 'flex' : 'none';
+    if (nav) nav.style.display = 'flex';
 
-    document.querySelectorAll('.nav-item').forEach(item => {
-      item.classList.toggle('active', item.dataset.nav === screenName);
-    });
+    updateProgressStepper(screenName);
 
-    // Slide mascot to active tab
+    // Slide mascot to current active step
     requestAnimationFrame(() => {
-      const active = document.querySelector('.nav-item.active[data-nav]');
+      const active = document.querySelector('.progress-step.active');
       if (active) updateMascot(active);
     });
 
@@ -117,77 +115,77 @@ const AkiApp = (() => {
     });
   }
 
-  // ── Anime nav ─────────────────────────────────────────────────────────────
+  // ── Progress stepper + mascot ─────────────────────────────────────────────
   let _mascotShakeTimer = null;
 
-  function updateMascot(activeItem) {
-    const track     = document.getElementById('anime-mascot-track');
-    const indicator = document.getElementById('nav-active-indicator');
-    const pill      = document.getElementById('anime-nav-pill');
-    if (!track || !activeItem) return;
+  // Screen → step index: each page transition advances the bar
+  // 0=Scan  1=Identify  2=Cook  3=Story
+  const SCREEN_STEP = {
+    splash:    0,
+    upload:    0,
+    detect:    1,   // photo analysed → step 2
+    recipe:    2,   // recipe chosen  → step 3
+    kitchen3d: 2,
+    story:     3,   // story          → step 4
+  };
 
-    const pillRect = pill.getBoundingClientRect();
-    const itemRect = activeItem.getBoundingClientRect();
-
-    // Slide track: center over active tab (track is 60px wide)
-    const trackOffset = (itemRect.left + itemRect.width / 2) - pillRect.left - 30;
-    track.style.transform = `translateX(${trackOffset}px)`;
-
-    // Slide indicator to match active item position within pill
-    if (indicator) {
-      const indicatorLeft = itemRect.left - pillRect.left - 5;
-      indicator.style.left  = indicatorLeft + 'px';
-      indicator.style.width = (itemRect.width + 10) + 'px';
-    }
+  function updateMascot(el) {
+    const track = document.getElementById('anime-mascot-track');
+    if (!track || !el) return;
+    const rect = el.getBoundingClientRect();
+    track.style.left = (rect.left + rect.width / 2 - 30) + 'px';
   }
 
-  function triggerMascotHover(on) {
+  function triggerMascotShake() {
     const mascot = document.getElementById('anime-mascot');
     if (!mascot) return;
-    if (on) {
-      mascot.classList.add('mascot--hover');
-      // Re-trigger shake animation each hover
-      mascot.style.animation = 'none';
-      requestAnimationFrame(() => { mascot.style.animation = ''; });
-      clearTimeout(_mascotShakeTimer);
-      _mascotShakeTimer = setTimeout(() => {
-        mascot.classList.remove('mascot--hover');
-      }, 500);
-    } else {
-      clearTimeout(_mascotShakeTimer);
-      mascot.classList.remove('mascot--hover');
-    }
+    mascot.classList.remove('mascot--hover');
+    void mascot.offsetWidth; // reflow to restart animation
+    mascot.classList.add('mascot--hover');
+    clearTimeout(_mascotShakeTimer);
+    _mascotShakeTimer = setTimeout(() => mascot.classList.remove('mascot--hover'), 520);
   }
 
-  // ── Bottom nav clicks ──────────────────────────────────────────────────────
+  function updateProgressStepper(screenName) {
+    const activeIdx = SCREEN_STEP[screenName] ?? 0;
+    const steps     = document.querySelectorAll('.progress-step');
+    const connectors = document.querySelectorAll('.progress-connector');
+
+    steps.forEach((step, i) => {
+      step.classList.remove('active', 'completed');
+      if (i < activeIdx)      step.classList.add('completed');
+      else if (i === activeIdx) step.classList.add('active');
+    });
+
+    connectors.forEach((c, i) => {
+      c.classList.toggle('completed', i < activeIdx);
+    });
+  }
+
   function initBottomNav() {
-    const items = document.querySelectorAll('.nav-item[data-nav]');
+    const steps = document.querySelectorAll('.progress-step[data-nav]');
+    const pill  = document.getElementById('anime-nav-pill');
 
-    items.forEach(item => {
-      item.addEventListener('click', () => {
-        const target = item.dataset.nav;
-        if ((target === 'recipe' || target === 'story') && !state.uploadData) {
-          goTo('upload');
-          return;
-        }
-        goTo(target);
+    steps.forEach(step => {
+      // Mascot follows hover
+      step.addEventListener('mouseenter', () => {
+        updateMascot(step.querySelector('.progress-step-dot') || step);
+        triggerMascotShake();
       });
-
-      item.addEventListener('mouseenter', () => {
-        item.classList.add('nav-hovered');
-        triggerMascotHover(true);
-      });
-
-      item.addEventListener('mouseleave', () => {
-        item.classList.remove('nav-hovered');
-        triggerMascotHover(false);
+      step.addEventListener('mouseleave', () => {
+        // Return mascot to active step
+        const active = document.querySelector('.progress-step.active .progress-step-dot')
+                    || document.querySelector('.progress-step.active');
+        if (active) updateMascot(active);
       });
     });
 
-    // Initial position after render
+    // Initial position
     requestAnimationFrame(() => {
-      const active = document.querySelector('.nav-item.active');
-      if (active) updateMascot(active);
+      updateProgressStepper(state.currentScreen);
+      const activeDot = document.querySelector('.progress-step.active .progress-step-dot')
+                     || document.querySelector('.progress-step.active');
+      if (activeDot) updateMascot(activeDot);
     });
   }
 
