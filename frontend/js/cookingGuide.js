@@ -1,4 +1,4 @@
-/* global THREE, Step1Chop, Step2Chop, INGREDIENT_POSITIONS, INGREDIENT_SCALES, INGREDIENT_ROTATIONS, DEFAULT_ROTATION */
+/* global THREE, Step1Chop, Step2Chop, Step3Garlic, Step4Stock, Step5Boil, Step6Veggies, Step7BeansCorn, Step8Stir, INGREDIENT_POSITIONS, INGREDIENT_SCALES, INGREDIENT_ROTATIONS, DEFAULT_ROTATION */
 'use strict';
 
 /**
@@ -13,7 +13,7 @@
 const CookingGuide = (() => {
   'use strict';
 
-  // ── State ─────────────────────────────────────────────────────────────────
+  // ── State ────────────────────��────────────────────────────────────────────
   let _scene, _camera, _renderer, _meshes;
   let _currentStep  = 0;
   let _animId       = null;
@@ -31,6 +31,9 @@ const CookingGuide = (() => {
   let _cuttingBoard = null;
   let _orangePile   = null;
   let _dicedOnionsMesh = null;
+  let _mincedGarlicMesh = null;
+  let _potMesh = null;
+  let _stewMesh = null;
   let _knifeGroup   = null;
   let _spoonGroup   = null;
   let _spotGlow     = null;
@@ -75,6 +78,25 @@ const CookingGuide = (() => {
   const DICED_ONIONS_ROT   = INGREDIENT_ROTATIONS[_dicedOnionsKey]  || DEFAULT_ROTATION;
   const DICED_ONIONS_SCALE = INGREDIENT_SCALES[_dicedOnionsKey]      || 0.3;
 
+  // Minced garlic pile
+  const _mincedGarlicSlot = 'minced_garlic_1';
+  const _mincedGarlicKey  = 'minced_garlic';
+  const MINCED_GARLIC_POS   = INGREDIENT_POSITIONS[_mincedGarlicSlot] || { x: 0.9, y: 3.1, z: -0.3 };
+  const MINCED_GARLIC_ROT   = INGREDIENT_ROTATIONS[_mincedGarlicKey]  || DEFAULT_ROTATION;
+  const MINCED_GARLIC_SCALE = INGREDIENT_SCALES[_mincedGarlicKey]      || 0.3;
+
+  // Pot
+  const _potSlot = 'pot_1';
+  const _potKey  = 'pot';
+  const POT_POS   = INGREDIENT_POSITIONS[_potSlot] || { x: 0.5, y: 3.0, z: 0.2 };
+  const POT_ROT   = INGREDIENT_ROTATIONS[_potKey]  || DEFAULT_ROTATION;
+  const POT_SCALE = INGREDIENT_SCALES[_potKey]      || 0.3;
+
+  // Stew (final reveal, step 8)
+  const STEW_POS   = { x: 0.1341, y: 3.1786, z: -0.4954 };
+  const STEW_ROT   = { x: 0.0080, y: 0.9917, z: -0.0067 };
+  const STEW_SCALE = 0.4138;
+
   // ── Ingredient emoji map ──────────────────────────────────────────────────
   const ING_EMOJI = {
     butternut_squash_1: '🎃',
@@ -109,66 +131,38 @@ const CookingGuide = (() => {
       activeIngredients: ['garlic_1'], duration: null,
     },
     {
-      id: 4, phase: 'Preparation', icon: '💧', action: 'DRAIN', heroColor: '#1E3D60', animType: 'drain',
-      title: 'Drain and rinse the beans',
-      body: 'Open the can, pour into a colander and rinse under cold water for 30 seconds. Removes excess sodium and starch.',
-      tip: null,
-      activeIngredients: ['canned_beans_1'], duration: null,
+      id: 4, phase: 'Preparation', icon: '🍲', action: 'POUR_STOCK', heroColor: '#1E3D60', animType: 'pour',
+      title: 'Pour chicken stock into the pot',
+      body: 'Open the chicken stock and pour 6 cups into the large pot. This forms the base of your stew.',
+      tip: 'Room-temperature stock heats faster than cold from the fridge.',
+      activeIngredients: ['chicken_stock_1'], duration: null,
     },
     {
-      id: 5, phase: 'Preparation', icon: '💧', action: 'DRAIN', heroColor: '#1E3D60', animType: 'drain',
-      title: 'Prepare the corn',
-      body: 'Open the canned corn and drain well. If using fresh, hold the cob upright and slice kernels off with a downward stroke.',
-      tip: null,
-      activeIngredients: ['canned_corn_1'], duration: null,
+      id: 5, phase: 'Preparation', icon: '🌡️', action: 'BOIL', heroColor: '#5A2800', animType: 'boil',
+      title: 'Bring stock to a boil',
+      body: 'Place the pot on the stove and crank the heat to high. Wait for a rolling boil — big bubbles breaking the surface.',
+      tip: 'A rolling boil is when bubbles break the surface continuously, not just at the edges.',
+      activeIngredients: ['chicken_stock_1'], duration: null,
     },
     {
-      id: 6, phase: 'Cooking', icon: '🍳', action: 'SAUTÉ', heroColor: '#7A3800', animType: 'stir',
-      title: 'Sauté the onion',
-      body: 'Heat 2 tbsp oil in a large pot over medium. Add diced onion + pinch of salt. Cook 5–8 min, stirring, until soft and golden.',
-      tip: 'Don\'t rush — properly softened onions become the sweet savory base of the whole stew.',
-      activeIngredients: ['onion_1'], duration: null,
+      id: 6, phase: 'Cooking', icon: '🥘', action: 'ADD_VEGGIES', heroColor: '#5A2800', animType: 'add_veggies',
+      title: 'Drop the veggies into the pot',
+      body: 'Add the cubed squash, diced onion, and minced garlic into the boiling stock. They\'ll cook down into a rich, hearty stew base.',
+      tip: 'Add the squash first — it takes the longest to soften.',
+      activeIngredients: ['butternut_squash_1', 'onion_1', 'garlic_1'], duration: null,
     },
     {
-      id: 7, phase: 'Cooking', icon: '✨', action: 'BLOOM', heroColor: '#6B3A00', animType: 'sparkle',
-      title: 'Add garlic and spices',
-      body: 'Add minced garlic, 1 tsp cumin, 1 tsp chili powder, ½ tsp thyme. Stir constantly 60 seconds until fragrant.',
-      tip: 'Blooming in hot oil unlocks fat-soluble aromatics that water alone can\'t extract.',
-      activeIngredients: ['garlic_1'], duration: null,
-    },
-    {
-      id: 8, phase: 'Cooking', icon: '🌡️', action: 'BOIL', heroColor: '#5A2800', animType: 'steam',
-      title: 'Add squash and stock — bring to a boil',
-      body: 'Add the cubed squash and pour in 6 cups of chicken stock. Crank to high and bring to a rolling boil, then reduce.',
-      tip: null,
-      activeIngredients: ['butternut_squash_1', 'chicken_stock_1'], duration: null,
-    },
-    {
-      id: 9, phase: 'Cooking', icon: '⏱️', action: 'SIMMER', heroColor: '#1A3D28', animType: 'steam',
-      title: 'Simmer until fork-tender',
-      body: 'Reduce to medium-low, cover, simmer 15–20 minutes. The squash is ready when a fork slides through with zero resistance.',
-      tip: null,
-      activeIngredients: ['butternut_squash_1'], duration: 8,
-    },
-    {
-      id: 10, phase: 'Finishing', icon: '🥄', action: 'STIR IN', heroColor: '#133020', animType: 'stir',
-      title: 'Stir in beans and corn',
-      body: 'Add the drained beans and corn. Remove the lid and simmer on medium 10 more minutes — the stew will thicken.',
-      tip: null,
+      id: 7, phase: 'Cooking', icon: '🥘', action: 'ADD_BEANS_CORN', heroColor: '#5A2800', animType: 'add_beans_corn',
+      title: 'Add beans and corn to the pot',
+      body: 'Pour the drained beans and corn into the boiling stock. They\'ll simmer alongside the veggies and soak up all that flavour.',
+      tip: 'Add beans first — they\'re denser and need a bit more time to heat through.',
       activeIngredients: ['canned_beans_1', 'canned_corn_1'], duration: null,
     },
     {
-      id: 11, phase: 'Finishing', icon: '🥄', action: 'MASH', heroColor: '#133020', animType: 'stir',
-      title: 'Mash for body',
-      body: 'Press ~10% of the squash and beans against the pot wall with the back of your spoon. Stir back in — thickens the broth naturally.',
-      tip: 'Traditional technique. Rustic texture, no blender needed.',
-      activeIngredients: ['butternut_squash_1', 'canned_beans_1'], duration: null,
-    },
-    {
-      id: 12, phase: 'Finishing', icon: '🧂', action: 'SEASON', heroColor: '#133020', animType: 'season',
-      title: 'Season to taste',
-      body: 'Taste and adjust with salt, pepper, and a squeeze of lemon. Ladle into bowls and serve immediately.',
-      tip: null,
+      id: 8, phase: 'Finishing', icon: '🥄', action: 'STIR', heroColor: '#1A0E04', animType: 'stir_finish',
+      title: 'Stir and let the stew come together',
+      body: 'Give everything a good stir to combine. The stew will thicken as the squash breaks down — your Three Sisters Stew is ready.',
+      tip: 'Taste and adjust seasoning. A squeeze of lime at the end brightens all the flavours.',
       activeIngredients: [], duration: null,
     },
   ];
@@ -410,9 +404,10 @@ const CookingGuide = (() => {
         g.traverse(c => {
           if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; }
         });
-        g.position.set(BOARD_CENTER.x, BOARD_Y, BOARD_CENTER.z);
+        g.position.set(BOARD_CENTER.x + 2.0, BOARD_Y, BOARD_CENTER.z);
         g.rotation.set(BOARD_ROT.x, BOARD_ROT.y, BOARD_ROT.z);
         g.scale.setScalar(BOARD_SCALE);
+        g.visible = false;
         g.userData.slotName = '__cutting_board__';
         _scene.add(g);
         _cuttingBoard = g;
@@ -425,8 +420,9 @@ const CookingGuide = (() => {
         const geo = new THREE.BoxGeometry(0.50, 0.022, 0.34);
         const mat = new THREE.MeshStandardMaterial({ color: 0x5C3010, roughness: 0.88 });
         const g = new THREE.Mesh(geo, mat);
-        g.position.set(BOARD_CENTER.x, BOARD_Y, BOARD_CENTER.z);
+        g.position.set(BOARD_CENTER.x + 2.0, BOARD_Y, BOARD_CENTER.z);
         g.castShadow = true; g.receiveShadow = true;
+        g.visible = false;
         g.userData.slotName = '__cutting_board__';
         _scene.add(g);
         _cuttingBoard = g;
@@ -450,6 +446,7 @@ const CookingGuide = (() => {
         g.scale.setScalar(PILE_SCALE);
         g.userData.slotName = _pileSlot;
         g.userData.ingredientName = 'orange-pile-cubes';
+        g.visible = false;
         _scene.add(g);
         _orangePile = g;
         if (_meshes) _meshes.push(g);
@@ -479,6 +476,7 @@ const CookingGuide = (() => {
         g.scale.setScalar(DICED_ONIONS_SCALE);
         g.userData.slotName = _dicedOnionsSlot;
         g.userData.ingredientName = 'diced_onions';
+        g.visible = false;
         _scene.add(g);
         _dicedOnionsMesh = g;
         if (_meshes) _meshes.push(g);
@@ -489,6 +487,93 @@ const CookingGuide = (() => {
       undefined,
       () => {
         console.warn('[CookingGuide] diced_onions.glb failed to load');
+      }
+    );
+  }
+
+  // ── Minced garlic pile ─────────────────────────────────────────────────────
+  function _buildMincedGarlic() {
+    const glbLoader = new THREE.GLTFLoader();
+    glbLoader.load(
+      '/assets/3d/minced-garlic.glb',
+      (gltf) => {
+        const g = gltf.scene;
+        g.traverse(c => {
+          if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; }
+        });
+        g.position.set(MINCED_GARLIC_POS.x, MINCED_GARLIC_POS.y, MINCED_GARLIC_POS.z);
+        g.rotation.set(MINCED_GARLIC_ROT.x, MINCED_GARLIC_ROT.y, MINCED_GARLIC_ROT.z);
+        g.scale.setScalar(MINCED_GARLIC_SCALE);
+        g.userData.slotName = _mincedGarlicSlot;
+        g.userData.ingredientName = 'minced-garlic';
+        g.visible = false;
+        _scene.add(g);
+        _mincedGarlicMesh = g;
+        if (_meshes) _meshes.push(g);
+        const box = new THREE.Box3().setFromObject(g);
+        const size = box.getSize(new THREE.Vector3());
+        console.log('[CookingGuide] minced-garlic.glb loaded — world size:', size, 'pos:', MINCED_GARLIC_POS);
+      },
+      undefined,
+      () => {
+        console.warn('[CookingGuide] minced-garlic.glb failed to load');
+      }
+    );
+  }
+
+  // ── Pot ──────────────────────────────────────────────────────────────────
+  function _buildPot() {
+    const glbLoader = new THREE.GLTFLoader();
+    glbLoader.load(
+      '/assets/3d/pot.glb',
+      (gltf) => {
+        const g = gltf.scene;
+        g.traverse(c => {
+          if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; }
+        });
+        g.position.set(POT_POS.x, POT_POS.y, POT_POS.z);
+        g.rotation.set(POT_ROT.x, POT_ROT.y, POT_ROT.z);
+        g.scale.setScalar(POT_SCALE);
+        g.userData.slotName = _potSlot;
+        g.userData.ingredientName = 'pot';
+        g.visible = false;
+        _scene.add(g);
+        _potMesh = g;
+        if (_meshes) _meshes.push(g);
+        const box = new THREE.Box3().setFromObject(g);
+        const size = box.getSize(new THREE.Vector3());
+        console.log('[CookingGuide] pot.glb loaded — world size:', size, 'pos:', POT_POS);
+      },
+      undefined,
+      () => {
+        console.warn('[CookingGuide] pot.glb failed to load');
+      }
+    );
+  }
+
+  // ── Stew (final reveal) ───────────────────────────────────────────────────
+  function _buildStew() {
+    const glbLoader = new THREE.GLTFLoader();
+    glbLoader.load(
+      '/assets/3d/stew.glb',
+      (gltf) => {
+        const g = gltf.scene;
+        g.traverse(c => {
+          if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; }
+        });
+        g.position.set(STEW_POS.x, STEW_POS.y, STEW_POS.z);
+        g.rotation.set(STEW_ROT.x, STEW_ROT.y, STEW_ROT.z);
+        g.scale.setScalar(STEW_SCALE);
+        g.userData.slotName = 'stew_1';
+        g.userData.ingredientName = 'stew';
+        g.visible = false;
+        _scene.add(g);
+        _stewMesh = g;
+        console.log('[CookingGuide] stew.glb loaded at', STEW_POS);
+      },
+      undefined,
+      () => {
+        console.warn('[CookingGuide] stew.glb failed to load');
       }
     );
   }
@@ -593,6 +678,7 @@ const CookingGuide = (() => {
     if (force) {
       if (_orangePile) _orangePile.visible = false;
       if (_dicedOnionsMesh) _dicedOnionsMesh.visible = false;
+      if (_mincedGarlicMesh) _mincedGarlicMesh.visible = false;
     }
   }
 
@@ -728,6 +814,11 @@ const CookingGuide = (() => {
     _clearParticles();
     if (typeof Step1Chop !== 'undefined') Step1Chop.cleanup();
     if (typeof Step2Chop !== 'undefined') Step2Chop.cleanup();
+    if (typeof Step3Garlic !== 'undefined') Step3Garlic.cleanup();
+    if (typeof Step4Stock !== 'undefined') Step4Stock.cleanup();
+    if (typeof Step6Veggies !== 'undefined') Step6Veggies.cleanup();
+    if (typeof Step7BeansCorn !== 'undefined') Step7BeansCorn.cleanup();
+    if (typeof Step8Stir !== 'undefined') Step8Stir.cleanup();
     _animType = type; _animT = 0; _stirAngle = 0;
 
     switch (type) {
@@ -735,6 +826,26 @@ const CookingGuide = (() => {
         // Don't auto-start — wait for user to press "Start Cutting"
         _chopWaiting = true;
         _showStartCuttingBtn();
+        break;
+      case 'pour':
+        _chopWaiting = true;
+        _showStartPouringBtn();
+        break;
+      case 'boil':
+        _chopWaiting = true;
+        _showStartBoilingBtn();
+        break;
+      case 'add_veggies':
+        _chopWaiting = true;
+        _showAddVeggiesBtn();
+        break;
+      case 'add_beans_corn':
+        _chopWaiting = true;
+        _showAddBeansCornBtn();
+        break;
+      case 'stir_finish':
+        _chopWaiting = true;
+        _showStartStirringBtn();
         break;
       case 'stir':
         if (_spoonGroup && ingPos) {
@@ -767,6 +878,96 @@ const CookingGuide = (() => {
     if (el) el.remove();
   }
 
+  // ── Start Pouring button (for pour steps) ──────────────────────────────
+  function _showStartPouringBtn() {
+    _removeStartPouringBtn();
+    const btn = document.createElement('button');
+    btn.id = 'cg-start-pouring';
+    btn.textContent = 'Start Pouring';
+    btn.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:10001;' +
+      'background:#4a90d9;color:#fff;border:none;font:bold 15px sans-serif;padding:10px 28px;' +
+      'border-radius:8px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.4);';
+    btn.addEventListener('click', _beginPour);
+    document.body.appendChild(btn);
+  }
+
+  function _removeStartPouringBtn() {
+    const el = document.getElementById('cg-start-pouring');
+    if (el) el.remove();
+  }
+
+  // ── Start Boiling button (for boil step) ────────────────────────────────
+  function _showStartBoilingBtn() {
+    _removeStartBoilingBtn();
+    const btn = document.createElement('button');
+    btn.id = 'cg-start-boiling';
+    btn.textContent = 'Start Boiling';
+    btn.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:10001;' +
+      'background:#d94a2a;color:#fff;border:none;font:bold 15px sans-serif;padding:10px 28px;' +
+      'border-radius:8px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.4);';
+    btn.addEventListener('click', _beginBoil);
+    document.body.appendChild(btn);
+  }
+
+  function _removeStartBoilingBtn() {
+    const el = document.getElementById('cg-start-boiling');
+    if (el) el.remove();
+  }
+
+  // ── Add Veggies button (for step 6) ───────────────────────────────────
+  function _showAddVeggiesBtn() {
+    _removeAddVeggiesBtn();
+    const btn = document.createElement('button');
+    btn.id = 'cg-start-veggies';
+    btn.textContent = 'Add Veggies';
+    btn.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:10001;' +
+      'background:#2a8c3e;color:#fff;border:none;font:bold 15px sans-serif;padding:10px 28px;' +
+      'border-radius:8px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.4);';
+    btn.addEventListener('click', _beginAddVeggies);
+    document.body.appendChild(btn);
+  }
+
+  function _removeAddVeggiesBtn() {
+    const el = document.getElementById('cg-start-veggies');
+    if (el) el.remove();
+  }
+
+  // ── Add Beans & Corn button (for step 7) ────────────────────────────
+  function _showAddBeansCornBtn() {
+    _removeAddBeansCornBtn();
+    const btn = document.createElement('button');
+    btn.id = 'cg-start-beans-corn';
+    btn.textContent = 'Add Beans & Corn';
+    btn.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:10001;' +
+      'background:#8B6914;color:#fff;border:none;font:bold 15px sans-serif;padding:10px 28px;' +
+      'border-radius:8px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.4);';
+    btn.addEventListener('click', _beginAddBeansCorn);
+    document.body.appendChild(btn);
+  }
+
+  function _removeAddBeansCornBtn() {
+    const el = document.getElementById('cg-start-beans-corn');
+    if (el) el.remove();
+  }
+
+  // ── Start Stirring button (for step 8) ────────────────────────────────
+  function _showStartStirringBtn() {
+    _removeStartStirringBtn();
+    const btn = document.createElement('button');
+    btn.id = 'cg-start-stirring';
+    btn.textContent = 'Start Stirring';
+    btn.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:10001;' +
+      'background:#6B3A14;color:#fff;border:none;font:bold 15px sans-serif;padding:10px 28px;' +
+      'border-radius:8px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.4);';
+    btn.addEventListener('click', _beginStir);
+    document.body.appendChild(btn);
+  }
+
+  function _removeStartStirringBtn() {
+    const el = document.getElementById('cg-start-stirring');
+    if (el) el.remove();
+  }
+
   // Onion chop target on the board
   const ONION_CHOP_TARGET = { x: 0.0977, y: 3.0259, z: -0.3594 };
   // Final scale for diced onions pile during step 2
@@ -790,6 +991,7 @@ const CookingGuide = (() => {
 
     // Reset cutting board to its known centre so step modules slide it in correctly
     if (_cuttingBoard) {
+      _cuttingBoard.visible = true;
       _cuttingBoard.position.set(BOARD_CENTER.x, BOARD_Y, BOARD_CENTER.z);
     }
 
@@ -816,6 +1018,37 @@ const CookingGuide = (() => {
           // Ingredient consumed — don't return it to shelf on step change
           delete _origPositions[slot];
           console.log('[CookingGuide] dice pipeline complete');
+        },
+      });
+      return;
+    }
+
+    // Step 3: Smash & mince the garlic — use Step3Garlic
+    if (step.action === 'MINCE' && typeof Step3Garlic !== 'undefined') {
+      const GARLIC_CHOP_TARGET = { x: 0.0879, y: 3.1360, z: -0.3736 };
+      const MINCED_PILE_FINAL  = { x: 1.2118, y: 3.0039, z: -0.4023 };
+      const MINCED_PILE_SCALE  = 0.2335;
+
+      if (_mincedGarlicMesh) {
+        _mincedGarlicMesh.visible = false;
+        _mincedGarlicMesh.position.set(GARLIC_CHOP_TARGET.x, GARLIC_CHOP_TARGET.y, GARLIC_CHOP_TARGET.z);
+        _mincedGarlicMesh.scale.setScalar(0.001);
+      }
+
+      Step3Garlic.start({
+        ingredient:     m,
+        knifeGroup:     _knifeGroup,
+        mincedGarlic:   _mincedGarlicMesh,
+        cuttingBoard:   _cuttingBoard,
+        pileFinalScale: MINCED_PILE_SCALE,
+        pileFinalPos:   MINCED_PILE_FINAL,
+        chopTarget:     GARLIC_CHOP_TARGET,
+        boardCenter:    { x: GARLIC_CHOP_TARGET.x, z: GARLIC_CHOP_TARGET.z },
+        boardY:         GARLIC_CHOP_TARGET.y,
+        origPosition:   _origPositions[slot],
+        onComplete:     function onMinceComplete() {
+          delete _origPositions[slot];
+          console.log('[CookingGuide] mince pipeline complete');
         },
       });
       return;
@@ -851,12 +1084,120 @@ const CookingGuide = (() => {
     }
   }
 
+  // ── Begin Pour (for Step4Stock) ─────────────────────────────────────────
+  function _beginPour() {
+    _removeStartPouringBtn();
+    _chopWaiting = false;
+
+    const step = STEPS[_currentStep];
+    if (!step || step.action !== 'POUR_STOCK') return;
+
+    const slot = step.activeIngredients[0];
+    const m = _getMesh(slot);
+    if (!m) return;
+
+    if (typeof Step4Stock !== 'undefined') {
+      Step4Stock.start({
+        stockMesh:  m,
+        potMesh:    _potMesh,
+        onComplete: function onPourComplete() {
+          console.log('[CookingGuide] pour stock pipeline complete');
+        },
+      });
+    }
+  }
+
+  // ── Begin Boil (for Step5Boil — persistent steam) ─────────────────────
+  function _beginBoil() {
+    _removeStartBoilingBtn();
+    _chopWaiting = false;
+
+    const step = STEPS[_currentStep];
+    if (!step || step.action !== 'BOIL' || step.animType !== 'boil') return;
+
+    if (typeof Step5Boil !== 'undefined') {
+      Step5Boil.start({
+        potMesh: _potMesh,
+        onComplete: function onBoilComplete() {
+          console.log('[CookingGuide] boil steam started — persists for rest of tutorial');
+        },
+      });
+    }
+  }
+
+  // ── Begin Add Veggies (for Step6Veggies) ──────────────────────────────
+  function _beginAddVeggies() {
+    _removeAddVeggiesBtn();
+    _chopWaiting = false;
+
+    const step = STEPS[_currentStep];
+    if (!step || step.action !== 'ADD_VEGGIES') return;
+
+    if (typeof Step6Veggies !== 'undefined') {
+      Step6Veggies.start({
+        squashMesh: _orangePile,
+        onionMesh:  _dicedOnionsMesh,
+        garlicMesh: _mincedGarlicMesh,
+        potMesh:    _potMesh,
+        onComplete: function onVeggiesComplete() {
+          console.log('[CookingGuide] veggies added to pot — pipeline complete');
+        },
+      });
+    }
+  }
+
+  // ── Begin Add Beans & Corn (for Step7BeansCorn) ──────────────────────
+  function _beginAddBeansCorn() {
+    _removeAddBeansCornBtn();
+    _chopWaiting = false;
+
+    const step = STEPS[_currentStep];
+    if (!step || step.action !== 'ADD_BEANS_CORN') return;
+
+    const beansM = _getMesh('canned_beans_1');
+    const cornM  = _getMesh('canned_corn_1');
+
+    if (typeof Step7BeansCorn !== 'undefined') {
+      Step7BeansCorn.start({
+        beansMesh:  beansM,
+        cornMesh:   cornM,
+        potMesh:    _potMesh,
+        onComplete: function onBeansCornComplete() {
+          console.log('[CookingGuide] beans & corn added to pot — pipeline complete');
+        },
+      });
+    }
+  }
+
+  // ── Begin Stir (for Step8Stir) ────────────────────────────────────────
+  function _beginStir() {
+    _removeStartStirringBtn();
+    _chopWaiting = false;
+
+    const step = STEPS[_currentStep];
+    if (!step || step.action !== 'STIR') return;
+
+    if (typeof Step8Stir !== 'undefined') {
+      Step8Stir.start({
+        spoonGroup:      _spoonGroup,
+        potMesh:         _potMesh,
+        stewMesh:        _stewMesh,
+        stewTargetScale: STEW_SCALE,
+        onComplete: function onStirComplete() {
+          console.log('[CookingGuide] stir complete — stew revealed');
+        },
+      });
+    }
+  }
+
   // ── Animation ticks ───────────────────────────────────────────────────────
   function _tickChop(dt) {
     if (_chopWaiting) return;
     // Step1Chop orchestrates squash chopping; Step2Chop orchestrates onion dicing
     if (typeof Step1Chop !== 'undefined') Step1Chop.tick(dt);
     if (typeof Step2Chop !== 'undefined') Step2Chop.tick(dt);
+    if (typeof Step3Garlic !== 'undefined') Step3Garlic.tick(dt);
+    if (typeof Step4Stock !== 'undefined') Step4Stock.tick(dt);
   }
 
   function _tickStir(dt, base) {
@@ -1026,6 +1367,9 @@ const CookingGuide = (() => {
 
     // Return any ingredients sitting on the cutting board
     _returnAllIngredients();
+
+    // Pot appears at step 4 and stays for the rest of the guide
+    if (_potMesh && step.id >= 4) _potMesh.visible = true;
 
     // Hero band
     const hero = _q('#cg-hero');
@@ -1294,44 +1638,19 @@ const CookingGuide = (() => {
       const base = ingM ? ingM.position : null;
 
       switch (_animType) {
-        case 'chop':    _tickChop(dt); break;
+        case 'chop':        _tickChop(dt); break;
+        case 'pour':        _tickChop(dt); break;
+        case 'boil':        break; // Step5Boil ticks below (persistent)
+        case 'add_veggies': if (typeof Step6Veggies !== 'undefined') Step6Veggies.tick(dt); break;
+        case 'add_beans_corn': if (typeof Step7BeansCorn !== 'undefined') Step7BeansCorn.tick(dt); break;
+        case 'stir_finish': if (!_chopWaiting && typeof Step8Stir !== 'undefined') Step8Stir.tick(dt); break;
         case 'stir':    if (base) _tickStir(dt, base); break;
         default:        if (base) _tickAllParticles(dt, base, now); break;
       }
     }
 
-    // ── Smoke / steam particle animation ──────────────────────────────────
-    if (_smokePosAttr && _smokeVelocities) {
-      const pos     = _smokePosAttr.array;
-      const maxH    = BOARD_Y + 1.6;
-      const spread  = 0.22;
-      for (let i = 0; i < _SMOKE_COUNT; i++) {
-        const j = i * 3;
-        const v = _smokeVelocities[i];
-        pos[j]   += v.x;
-        pos[j+1] += v.y;
-        pos[j+2] += v.z;
-        v.life   += dt * 0.55;
-        // Drift & waver
-        v.x = (Math.random() - 0.5) * 0.0015;
-        v.z = (Math.random() - 0.5) * 0.0015;
-        // Reset particle when it floats out of range
-        if (pos[j+1] > maxH || v.life > 1) {
-          pos[j]   = BOARD_CENTER.x + (Math.random() - 0.5) * spread;
-          pos[j+1] = BOARD_Y + 0.1 + Math.random() * 0.15;
-          pos[j+2] = BOARD_CENTER.z + (Math.random() - 0.5) * spread;
-          v.x = (Math.random() - 0.5) * 0.0025;
-          v.y = 0.004 + Math.random() * 0.004;
-          v.z = (Math.random() - 0.5) * 0.0025;
-          v.life = 0;
-        }
-      }
-      _smokePosAttr.needsUpdate = true;
-      // Gently pulse opacity
-      if (_smokePoints) {
-        _smokePoints.material.opacity = 0.22 + 0.12 * Math.sin(t * 1.4);
-      }
-    }
+    // Persistent boiling steam (ticks regardless of current step)
+    if (typeof Step5Boil !== 'undefined') Step5Boil.tick(dt);
 
     // Countdown ring
     if (_countdownStart !== null) {
@@ -1358,12 +1677,21 @@ const CookingGuide = (() => {
     _buildCuttingBoard();
     _buildOrangePile();
     _buildDicedOnions();
+    _buildMincedGarlic();
+    _buildPot();
+    _buildStew();
     _buildKnife();
     _buildSpoon();
     _buildSpotGlow();
     _buildOverlay();
     if (typeof Step1Chop !== 'undefined') Step1Chop.init(_scene);
     if (typeof Step2Chop !== 'undefined') Step2Chop.init(_scene);
+    if (typeof Step3Garlic !== 'undefined') Step3Garlic.init(_scene);
+    if (typeof Step4Stock !== 'undefined') Step4Stock.init(_scene);
+    if (typeof Step5Boil !== 'undefined') Step5Boil.init(_scene);
+    if (typeof Step6Veggies !== 'undefined') Step6Veggies.init(_scene);
+    if (typeof Step7BeansCorn !== 'undefined') Step7BeansCorn.init(_scene);
+    if (typeof Step8Stir !== 'undefined') Step8Stir.init(_scene);
     _renderStep(0, true);
     _chime();
 
@@ -1393,7 +1721,13 @@ const CookingGuide = (() => {
     if (_autoAdvanceTimer) { clearTimeout(_autoAdvanceTimer); _autoAdvanceTimer = null; }
     if (_stepAudio) { _stepAudio.pause(); _stepAudio = null; }
     _clearLights(); _returnAllIngredients(true); _setAnimType('none', null);
-    _removeStartCuttingBtn(); _chopWaiting = false;
+    _removeStartCuttingBtn(); _removeStartPouringBtn(); _removeStartBoilingBtn(); _removeAddVeggiesBtn(); _removeAddBeansCornBtn(); _removeStartStirringBtn(); _chopWaiting = false;
+    if (typeof Step5Boil !== 'undefined') Step5Boil.cleanup();
+    if (typeof Step6Veggies !== 'undefined') Step6Veggies.cleanup();
+    if (typeof Step7BeansCorn !== 'undefined') Step7BeansCorn.cleanup();
+    if (typeof Step8Stir !== 'undefined') Step8Stir.cleanup();
+    if (_stewMesh) { _stewMesh.visible = false; _stewMesh.scale.setScalar(0.001); }
+    if (_potMesh) _potMesh.visible = false;
     _currentStep = 0; _countdownStart = null;
     _destroyOverlay(); _buildOverlay();
     _renderStep(0, true); _chime();
@@ -1405,9 +1739,15 @@ const CookingGuide = (() => {
     if (_autoAdvanceTimer) { clearTimeout(_autoAdvanceTimer); _autoAdvanceTimer = null; }
     if (_stepAudio) { _stepAudio.pause(); _stepAudio = null; }
     _clearLights(); _clearParticles(); _returnAllIngredients(true);
-    _removeStartCuttingBtn(); _chopWaiting = false;
+    _removeStartCuttingBtn(); _removeStartPouringBtn(); _removeStartBoilingBtn(); _removeAddVeggiesBtn(); _removeAddBeansCornBtn(); _removeStartStirringBtn(); _chopWaiting = false;
     if (typeof Step1Chop !== 'undefined') Step1Chop.destroy();
     if (typeof Step2Chop !== 'undefined') Step2Chop.destroy();
+    if (typeof Step3Garlic !== 'undefined') Step3Garlic.destroy();
+    if (typeof Step4Stock !== 'undefined') Step4Stock.destroy();
+    if (typeof Step5Boil !== 'undefined') Step5Boil.destroy();
+    if (typeof Step6Veggies !== 'undefined') Step6Veggies.destroy();
+    if (typeof Step7BeansCorn !== 'undefined') Step7BeansCorn.destroy();
+    if (typeof Step8Stir !== 'undefined') Step8Stir.destroy();
     _destroyOverlay();
 
     [_cuttingBoard, _knifeGroup, _spoonGroup, _spotGlow].forEach(obj => {
@@ -1423,7 +1763,7 @@ const CookingGuide = (() => {
         if (c.material) c.material.dispose();
       });
     });
-    _cuttingBoard = _knifeGroup = _spoonGroup = _spotGlow = _dicedOnionsMesh = null;
+    _cuttingBoard = _knifeGroup = _spoonGroup = _spotGlow = _dicedOnionsMesh = _mincedGarlicMesh = _potMesh = _stewMesh = null;
 
     // Clean up soup & smoke
     if (_soupMesh)    { _scene && _scene.remove(_soupMesh);    _soupMesh    = null; }

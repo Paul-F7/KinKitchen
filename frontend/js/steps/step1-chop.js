@@ -456,6 +456,7 @@ const Step1Chop = (() => {
 
     if (t >= 1) {
       _cuttingBoard.position.set(_boardStartPos.x, _boardStartPos.y, _boardStartPos.z);
+      _cuttingBoard.visible = false;
       _enterPhase(PHASE.DONE);
       _fireComplete();
     }

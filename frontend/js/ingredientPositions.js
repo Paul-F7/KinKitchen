@@ -23,6 +23,9 @@ var INGREDIENT_POSITIONS = {
   chicken_stock_1:    { x: -1.7173, y: 3.2265, z: 0.1202 },
   orange_pile_cubes_1: { x: 0.0685, y: 3.1045, z: -0.3929 },
   diced_onions_1:      { x: 0.5000, y: 3.1000, z: -0.3000 },
+  minced_garlic_1:     { x: 1.2118, y: 3.0039, z: -0.4023 },
+  pot_1:               { x: 0.5933, y: 3.0173, z: -0.4601 },
+  stew_1:              { x: 1.5000, y: 3.0000, z: 0.2000 },
 };
 
 // Per-ingredient scale overrides (uniform). Falls back to DEFAULT_SCALE.
@@ -37,6 +40,9 @@ var INGREDIENT_SCALES = {
   chicken_stock: 0.2689,
   orange_pile_cubes: 0.2956,
   diced_onions: 0.3000,
+  minced_garlic: 0.2335,
+  pot: 16.7917,
+  stew: 1.0000,
 };
 var DEFAULT_SCALE = 0.5;
 
@@ -51,5 +57,8 @@ var INGREDIENT_ROTATIONS = {
   chicken_stock:    { x: -3.1416, y: 0.5964, z: -3.1416 },
   orange_pile_cubes: { x: 0, y: 0, z: 0 },
   diced_onions:      { x: 0, y: 0, z: 0 },
+  minced_garlic:     { x: 0, y: 0, z: 0 },
+  pot:               { x: -2.8758, y: 1.5154, z: 2.8845 },
+  stew:              { x: 0, y: 0, z: 0 },
 };
 var DEFAULT_ROTATION = { x: 0, y: 0, z: 0 };
