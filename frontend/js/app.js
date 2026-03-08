@@ -59,12 +59,10 @@ const AkiApp = (() => {
     // ── Screen side-effects ────────────────────────────────────────────────
     if (screenName === 'splash') {
       requestAnimationFrame(() => {
-        if (window.Hero3d)       Hero3d.mount();
-        if (window.HeroFoodCard) HeroFoodCard.mount();
+        if (window.Hero3d) Hero3d.mount();
       });
     } else {
       if (window.Hero3d)         Hero3d.unmount();
-      if (window.HeroFoodCard)   HeroFoodCard.unmount();
       if (window.ImmersiveEntry) ImmersiveEntry.unmount();
     }
 
@@ -336,8 +334,7 @@ const AkiApp = (() => {
     // Start on splash
     goTo('splash');
     setTimeout(() => {
-      if (window.Hero3d)       Hero3d.mount();
-      if (window.HeroFoodCard) HeroFoodCard.mount();
+      if (window.Hero3d) Hero3d.mount();
     }, 150);
   }
 
