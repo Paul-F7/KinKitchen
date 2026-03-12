@@ -13,9 +13,9 @@ window.ASSET_URLS = {
   '/assets/3d/orange-cube.glb':    `${_CL}/raw/upload/kin-kitchen/3d/orange-cube.glb`,
   '/assets/3d/pot.glb':            `${_CL}/raw/upload/kin-kitchen/3d/pot.glb`,
   '/assets/3d/stew.glb':           `${_CL}/raw/upload/kin-kitchen/3d/stew.glb`,
-  '/assets/3d/patato-onion-fry.glb': `${_CL}/raw/upload/kin-kitchen/3d/patato-onion-fry.glb`,
-  '/assets/3d/rice-and-beans.glb':   `${_CL}/raw/upload/kin-kitchen/3d/rice-and-beans.glb`,
-  '/assets/3d/bean-chilli.glb':       `${_CL}/raw/upload/kin-kitchen/3d/bean-chili.glb`,
+  '/assets/3d/patato-onion-fry.glb': `${_GH}/assets/3d/patato-onion-fry.glb`,
+  '/assets/3d/rice-and-beans.glb':   `${_GH}/assets/3d/rice-and-beans.glb`,
+  '/assets/3d/bean-chilli.glb':      `${_GH}/assets/3d/bean-chilli.glb`,
   '/assets/3d/tomato.glb':         `${_CL}/raw/upload/kin-kitchen/3d/tomato.glb`,
   '/assets/3d/vegetable_soup.glb': `${_CL}/raw/upload/kin-kitchen/3d/vegetable_soup.glb`,
   '/assets/lesson-in-balance.mp4':   `${_CL}/video/upload/kin-kitchen/lesson-in-balance.mp4`,
@@ -25,6 +25,7 @@ window.ASSET_URLS = {
   '/assets/bean-chilli.mp4':         `${_CL}/video/upload/kin-kitchen/bean-chilli.mp4`,
 
   /* ── jsDelivr / GitHub CDN (>10 MB) ── */
+  '/assets/3d/diced-potato.glb':                           `${_GH}/assets/3d/diced-potato.glb`,
   '/assets/3d/potato.glb':                                 `${_GH}/assets/3d/potato.glb`,
   '/assets/3d/rice.glb':                                   `${_GH}/assets/3d/rice.glb`,
   '/assets/3d/butternut-squash.glb':                       `${_GH}/assets/3d/butternut-squash.glb`,
