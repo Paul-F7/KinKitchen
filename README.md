@@ -2,7 +2,7 @@
 
 **Reconnecting people with Indigenous food traditions through AI, 3D, and voice.**
 
-> **Live demo:** [kin-kitchen-two.vercel.app](https://kin-kitchen-two.vercel.app/) &nbsp;|&nbsp; **Devpost:** [devpost.com/software/kin-kitchen](https://devpost.com/software/kin-kitchen)
+> |&nbsp; **Devpost:** [devpost.com/software/kin-kitchen](https://devpost.com/software/kin-kitchen)
 
 Upload a photo of your kitchen or ingredients. Kin Kitchen identifies what you have, surfaces Indigenous context (Ojibwe names, cultural uses, nation & territory), matches recipes from an Indigenous recipes dataset, and guides you through cooking in an immersive step-by-step 3D kitchen with voice control and TTS narration.
 
